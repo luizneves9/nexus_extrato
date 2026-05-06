@@ -12,6 +12,9 @@ DIR_EXTRATOS = DIR_DATA / 'extrato_bancario'
 CAMINHO_EXTRATO_BANCARIO_NOVO = DIR_EXTRATOS / 'novos'
 CAMINHO_EXTRATO_BANCARIO_PROCESSADOS = DIR_EXTRATOS / 'processados'
 
+CAMINHO_EXTRATO_BANCARIO_NOVO.mkdir(parents=True, exist_ok=True)
+CAMINHO_EXTRATO_BANCARIO_PROCESSADOS.mkdir(parents=True, exist_ok=True)
+
 ## colunas principais
 
 ## renomear colunas
