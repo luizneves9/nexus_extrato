@@ -1,0 +1,10 @@
+.venv
+.env
+data/diario_auxiliar/novos/
+data/diario_auxiliar/processados/
+data/extrato_bancario/novos/
+data/extrato_bancario/processados/
+src/__pycache__
+src/extractor/__pycache__
+src/loader/__pycache__
+src/transformer/__pycache__
