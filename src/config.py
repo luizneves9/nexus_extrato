@@ -1,11 +1,17 @@
 import os
+from pathlib import Path
 
-## definindo o caminho base do projeto
-CAMINHO_BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+BASE_DIR = Path(__file__).resolve().parent.parent
+
+## caminhos
+DIR_DATA = BASE_DIR / 'data'
+DIR_EXTRATOS = DIR_DATA / 'extrato_bancario'
+
+## pastas de processamento
 
 ## diretorios
-CAMINHO_EXTRATO_BANCARIO_NOVO = os.path.join(CAMINHO_BASE, 'data/extrato_bancario/novos')
-CAMINHO_EXTRATO_BANCARIO_PROCESSADOS = os.path.join(CAMINHO_BASE, 'data/extrato_bancario/processados')
+CAMINHO_EXTRATO_BANCARIO_NOVO = DIR_EXTRATOS / 'novos'
+CAMINHO_EXTRATO_BANCARIO_PROCESSADOS = DIR_EXTRATOS / 'processados'
 
 ## colunas principais
 
