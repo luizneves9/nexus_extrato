@@ -1,5 +1,6 @@
 .venv
 .env
+.vscode/
 data/diario_auxiliar/novos/
 data/diario_auxiliar/processados/
 data/extrato_bancario/novos/

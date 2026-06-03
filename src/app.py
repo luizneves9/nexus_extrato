@@ -101,7 +101,7 @@ def modal_operacao(linha_selecionada):
     st.markdown(f'### ID: {linha_selecionada["id"]}   -   {linha_selecionada["Empresa"]}')
     st.markdown(f'### Saldo disponível: {linha_selecionada["Saldo"]:.2f}')
 
-    operacao = st.radio('Sistema', ['Corporativo', 'SSW', 'Delsoft'])
+    operacao = st.radio('Sistema', ['Corporativo', 'SSW', 'Delsoft', 'Diversos'])
 
     valor_final = st.number_input(
         'Valor de liquidação (R$)',
@@ -154,6 +154,41 @@ def modal_operacao(linha_selecionada):
     with col_vazia:
         if st.button('Cancelar', width='stretch'):
             st.rerun()
+
+@st.dialog('Liquidação Multipla')
+def modal_operacao_multipla(linha_selecionada):
+    st.markdown(f'### ID: {linha_selecionada["id"]}   -   {linha_selecionada["Empresa"]}')
+    st.markdown(f'### Saldo disponível: {linha_selecionada["Saldo"]:.2f}')
+
+    with st.container(border=True):
+        col1, col2, col3, col4 = st.columns(4)
+        with col1:
+            sistema_input = st.selectbox('Sistema', ['Corporativo', 'SSW', 'Delsoft', 'Diversos'])
+        with col2:
+            val_input = st.number_input('Valor', step=0.01)
+        with col3:
+            dp_input = st.text_input('Duplicata')
+        with col4:
+            parc_input = st.text_input('Parcela')
+
+        if st.button('Adicionar'):
+            if val_input != 0:
+                st.session_state.temp_baixas.append({'Sistema': sistema_input, 'Valor': val_input, 'DP': dp_input, 'Parc.':parc_input})
+
+    if st.session_state.temp_baixas:
+        df_temp = pd.DataFrame(st.session_state.temp_baixas)
+        st.table(df_temp)
+
+    col_vazia, col_btn = st.columns([1, 1])
+
+    with col_vazia:
+        if st.button('Cancelar', width='stretch'):
+            st.session_state.temp_baixas = []
+            st.rerun()
+
+    with col_btn:
+        if st.button('Confirmar', width='stretch'):
+            'Dev: Valores não liquidados... Operação ainda está em desenvolvimento :)'
 
 @st.dialog('Estorno de liquidacao')
 def modal_estorno_liquidacao(linha_selecionada):
@@ -229,6 +264,9 @@ def main():
             
             # filtrando as colunas essenciais
             df = df[['Banco', 'Ag./Conta', 'Data Contábil', 'Código Categoria', 'Descrição Categoria', 'Cód. Hist.', 'Descrição Histórico', 'Documento', 'Complemento', 'Natureza', 'Tipo', 'Valor', 'Status']]
+
+            df = df[df['Ag./Conta'] != 'Ag.: 4018-0 Cc: 89394-3']
+
             df.reset_index()
 
             # criando o hash
@@ -285,33 +323,31 @@ if __name__ == "__main__":
     with st.sidebar:
         st.title('NEXUS')
         st.header('Menu:')
-        pagina = st.radio('Menu', ['Resumo', 'Extrato', 'Liquidações', 'Contas bancarias'], label_visibility='collapsed')
+        pagina = st.radio('Menu', ['Extrato', 'Liquidações'], label_visibility='collapsed')
         st.header('Configurações:')
 
     if pagina == 'Resumo':
 
-        st.title('Resumo bancário')
+        st.write('< em desenvolvimento ')
 
-        with st.sidebar:
-            st.write('< em desenvolvimento >')
-
-        query_resumo = '''
-            SELECT
-                data_contabil as "Data",
-                SUM(CASE WHEN tipo = 'CREDITO' THEN valor ELSE 0 END) AS "Crédito",
-                SUM(CASE WHEN tipo = 'DEBITO' THEN valor ELSE 0 END) AS "Débito",
-                SUM(CASE WHEN tipo = 'CREDITO' THEN valor ELSE 0 END) + SUM(CASE WHEN tipo = 'DEBITO' THEN valor ELSE 0 END) as "Saldo do dia"
-            FROM db_extratos
-            GROUP BY
-                data_contabil
-            ORDER BY
-                data_contabil
-        '''
-
-        df_resumo = pd.read_sql(query_resumo, engine)
-        df_resumo['Data'] = pd.to_datetime(df_resumo['Data']).dt.date
-
-        st.dataframe(df_resumo, hide_index=True)
+        ## RETIRADO PARA ANÁLISE
+        #query_resumo = '''
+        #    SELECT
+        #        data_contabil as "Data",
+        #        SUM(CASE WHEN tipo = 'CREDITO' THEN valor ELSE 0 END) AS "Crédito",
+        #        SUM(CASE WHEN tipo = 'DEBITO' THEN valor ELSE 0 END) AS "Débito",
+        #        SUM(CASE WHEN tipo = 'CREDITO' THEN valor ELSE 0 END) + SUM(CASE WHEN tipo = 'DEBITO' THEN valor ELSE 0 END) as "Saldo do dia"
+        #    FROM db_extratos
+        #    GROUP BY
+        #        data_contabil
+        #    ORDER BY
+        #        data_contabil
+        #'''
+        #
+        #df_resumo = pd.read_sql(query_resumo, engine)
+        #df_resumo['Data'] = pd.to_datetime(df_resumo['Data']).dt.date
+        #
+        #st.dataframe(df_resumo, hide_index=True)
 
     elif pagina == 'Extrato':
 
@@ -324,6 +360,7 @@ if __name__ == "__main__":
         if 'complemento_selecionado' not in st.session_state: st.session_state.complemento_selecionado = ''
         if 'banco_selecionado' not in st.session_state: st.session_state.banco_selecionado = ''
         if 'agencia_selecionado' not in st.session_state: st.session_state.agencia_selecionado = ''
+        if 'id_selecionado' not in st.session_state: st.session_state.id_selecionado = ''
         if 'valor_selecionado' not in st.session_state: st.session_state.valor_selecionado = 0
 
         with st.sidebar:
@@ -336,6 +373,7 @@ if __name__ == "__main__":
                 selecao_agencia = st.text_input('Agencia/conta', value=st.session_state.agencia_selecionado)
                 selecao_historico = st.text_input('Histórico', value=st.session_state.historico_selecionado)
                 selecao_complemento = st.text_input('Complemento', value=st.session_state.complemento_selecionado)
+                selecao_id = st.text_input('ID', value=st.session_state.id_selecionado)
                 selecao_valor = st.number_input('Valor', value=float(st.session_state.valor_selecionado))
 
                 submit_button = st.form_submit_button(label='Atualizar')
@@ -346,6 +384,7 @@ if __name__ == "__main__":
                     st.session_state.empresa_selecionada = selecao_empresa
                     st.session_state.historico_selecionado = selecao_historico
                     st.session_state.complemento_selecionado = selecao_complemento
+                    st.session_state.id_selecionado = selecao_id
                     st.session_state.banco_selecionado = selecao_banco
                     st.session_state.agencia_selecionado = selecao_agencia
                     st.session_state.valor_selecionado = selecao_valor
@@ -355,10 +394,12 @@ if __name__ == "__main__":
         busca_complemento = f'%{st.session_state.complemento_selecionado}%'
         busca_banco = f'%{st.session_state.banco_selecionado}%'
         busca_agencia = f'%{st.session_state.agencia_selecionado}%'
+        busca_id = f'%{st.session_state.id_selecionado}%'
         params = {'data_1': st.session_state.data_selecionada_1,
                   'data_2': st.session_state.data_selecionada_2,
                   'historico': busca_historico,
                   'complemento': busca_complemento,
+                  'id': busca_id,
                   'banco': busca_banco,
                   'agencia': busca_agencia,
                   'valor': st.session_state.valor_selecionado}
@@ -389,6 +430,7 @@ if __name__ == "__main__":
             AND COALESCE(ext.banco, '') ILIKE :banco
             AND COALESCE(ext.agencia_conta, '') ILIKE :agencia
             AND COALESCE(ext.complemento, '') ILIKE :complemento
+            AND ext.id::TEXT ILIKE :id
             AND (
                 CASE
                     WHEN :valor = 0 THEN TRUE
@@ -400,6 +442,8 @@ if __name__ == "__main__":
         if st.session_state.empresa_selecionada != 'GRUPO':
             query += ' AND nome_empresa = :empresa'
             params['empresa'] = st.session_state.empresa_selecionada
+
+        query += ' ORDER BY ext.data_contabil ASC, ext.id ASC'
 
         df_resultado = pd.read_sql(text(query), engine, params=params) #type: ignore
 
@@ -426,19 +470,29 @@ if __name__ == "__main__":
 
         if not selecionados.empty:
             if len(selecionados) > 1:
-                st.warning('Selecione apenas um item por vez.')
+                st.error('Selecione apenas um item por vez.')
             else:
                 linha = selecionados.iloc[0]
 
-                if st.button(f'Liquidar - ID {linha["id"]}', type='primary'):
-                    modal_operacao(linha)
+                col1, col2 = st.columns([1, 7])
+
+                with col1:
+
+                    if st.button(f'Liquidar', type='primary'):
+                        modal_operacao(linha)
+
+                with col2:
+
+                    if st.button(f'Liquidação Múltipla < em desenvolvimento >', type='primary'):
+                        st.session_state.temp_baixas = []
+                        modal_operacao_multipla(linha)
 
         else:
             st.caption('Selecione um registro acima para habilitar as opções de liquidação.')
 
     elif pagina == 'Liquidações':
 
-        st.title('Extrato de liquidações')
+        st.title('Liquidações')
 
         if 'data_liquidacao_1' not in st.session_state: st.session_state.data_liquidacao_1 = lista_datas_liquidacao[-1] if lista_datas_liquidacao else date.today()
         if 'data_liquidacao_2' not in st.session_state: st.session_state.data_liquidacao_2 = lista_datas_liquidacao[-1] if lista_datas_liquidacao else date.today()
@@ -508,7 +562,7 @@ if __name__ == "__main__":
                 AND COALESCE("Sistema", '') ILIKE :sistema
                 AND COALESCE("Banco", '') ILIKE :banco
                 AND COALESCE("Agência/conta", '') ILIKE :agencia
-                AND COALESCE("DP") ILIKE :dp
+                AND COALESCE("DP", '') ILIKE :dp
                 AND (
                     CASE
                         WHEN :valor_banco = 0 THEN TRUE
@@ -560,12 +614,16 @@ if __name__ == "__main__":
 
         if not selecionados.empty:
             if len(selecionados) > 1:
-                st.warning('Selecione apenas um item por vez.')
+                st.error('Selecione apenas um item por vez.')
             else:
                 linha = selecionados.iloc[0]
 
-                if st.button(f'Estornar - ID {linha["ID"]}', type='primary'):
+                if st.button(f'Estornar - ID {linha["ID"]}', type='primary', key=f'btn_estorno{linha["ID"]}'):
                     modal_estorno_liquidacao(linha)
 
         else:
             st.caption('Selecione um registro acima para habilitar as opções de estorno.')
+
+    elif pagina == 'Contas bancarias':
+
+        st.write('< em desenvolvimento >')
