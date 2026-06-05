@@ -11,7 +11,8 @@ def conectar_banco():
     global engine
     if engine is None:
 
-        load_dotenv()
+        ambiente = os.getenv('APP_ENV', 'test')
+        load_dotenv(f'.env.{ambiente}')
 
         usuario = os.getenv("DB_USER")
         senha = os.getenv("DB_PASS")

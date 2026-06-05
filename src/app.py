@@ -22,7 +22,7 @@ engine = conectar_banco()
 
 # streamlit pagina
 st.set_page_config(
-    page_title='NEXUS',
+    page_title='BASE TESTE',
     layout='wide',
     initial_sidebar_state='expanded'
     )
@@ -321,7 +321,7 @@ if __name__ == "__main__":
     lista_datas_extrato, lista_empresas, lista_datas_liquidacao = carregar_filtro(engine, st.session_state.last_update)
 
     with st.sidebar:
-        st.title('NEXUS')
+        st.title('< BASE TESTE >')
         st.header('Menu:')
         pagina = st.radio('Menu', ['Extrato', 'Liquidações'], label_visibility='collapsed')
         st.header('Configurações:')
