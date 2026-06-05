@@ -1,5 +1,6 @@
 .venv
-.env
+.env*
+*.bat
 .vscode/
 data/diario_auxiliar/novos/
 data/diario_auxiliar/processados/
