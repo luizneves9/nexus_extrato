@@ -10,6 +10,7 @@ import streamlit as st
 from sqlalchemy import text
 from datetime import date
 import warnings
+import uuid
 
 ## configurações iniciais
 
@@ -157,27 +158,76 @@ def modal_operacao(linha_selecionada):
 
 @st.dialog('Liquidação Multipla')
 def modal_operacao_multipla(linha_selecionada):
-    st.markdown(f'### ID: {linha_selecionada["id"]}   -   {linha_selecionada["Empresa"]}')
-    st.markdown(f'### Saldo disponível: {linha_selecionada["Saldo"]:.2f}')
+
+    if 'temp_baixas' not in st.session_state:
+        st.session_state.temp_baixas = []
+
+    if 'input_reset_count' not in st.session_state:
+        st.session_state.input_reset_count = 0
+
+    reset_key = st.session_state.input_reset_count
+
+    st.write(f'{linha_selecionada["id"]} - {linha_selecionada["Empresa"]}')
+    st.write(f'Saldo: R$ {linha_selecionada["Saldo"]:.2f}')
+
+    saldo_placeholder = st.empty()
 
     with st.container(border=True):
-        col1, col2, col3, col4 = st.columns(4)
+        col1, col2, col3, col4, col5 = st.columns([2, 2, 2, 1, 1])
         with col1:
-            sistema_input = st.selectbox('Sistema', ['Corporativo', 'SSW', 'Delsoft', 'Diversos'])
+            sistema_input = st.selectbox('Sistema', ['Corporativo', 'SSW', 'Delsoft', 'Diversos'], key=f'sis_in_{reset_key}')
         with col2:
-            val_input = st.number_input('Valor', step=0.01)
+            if 'val_in_reset' not in st.session_state:
+                st.session_state.val_in_reset = 0.0
+            val_input = st.number_input('Valor', step=0.01, key=f'val_in_{reset_key}')
         with col3:
-            dp_input = st.text_input('Duplicata')
+            if 'dp_in_reset' not in st.session_state:
+                st.session_state.dp_in_reset = ''
+            dp_input = st.text_input('DP', key=f'dp_in_{reset_key}')
+            
         with col4:
-            parc_input = st.text_input('Parcela')
+            if 'parc_in_reset' not in st.session_state:
+                st.session_state.parc_in_reset = ''
+            parc_input = st.text_input('Parc.', key=f'parc_in_{reset_key}')
 
-        if st.button('Adicionar'):
-            if val_input != 0:
-                st.session_state.temp_baixas.append({'Sistema': sistema_input, 'Valor': val_input, 'DP': dp_input, 'Parc.':parc_input})
+        with col5:
+            st.write('##')
+            if st.button('+', key='add_btn'):
+                if val_input != 0:
+                    st.session_state.temp_baixas.append({'_id': str(uuid.uuid4()), 'Sistema': sistema_input, 'Valor': val_input, 'DP': dp_input, 'Parc.':parc_input})
+                    st.session_state.input_reset_count += 1
 
     if st.session_state.temp_baixas:
-        df_temp = pd.DataFrame(st.session_state.temp_baixas)
-        st.table(df_temp)
+        #df_temp = pd.DataFrame(st.session_state.temp_baixas)
+        #st.table(df_temp)
+
+        with st.container(border=True):
+
+            col_sis, col_val, col_dp, col_parc, col_btn = st.columns([2, 1, 1, 1, 1])
+            col_sis.write('**Sistema**')
+            col_val.write('**Valor**')
+            col_dp.write('**DP**')
+            col_parc.write('**Parc.**')
+            col_btn.write('**Ação**')
+
+            for item in st.session_state.temp_baixas:
+                c1, c2, c3, c4, c5 = st.columns([2, 1, 1, 1, 1])
+                c1.write(item['Sistema'])
+                c2.write(f'{item["Valor"]}')
+                c3.write(item['DP'])
+                c4.write(item['Parc.'])
+
+                if c5.button('-', key=f'btn_del_{item["_id"]}'):
+                    st.session_state.temp_baixas = [
+                        x for x in st.session_state.temp_baixas if x['_id'] != item['_id']
+                    ]
+
+    baixa_acumulada = sum(item['Valor'] for item in st.session_state.temp_baixas)
+
+    if baixa_acumulada > linha_selecionada['Saldo']:
+        saldo_placeholder.write(f'<span style="color:red">Saldo Acumulado: R$ {baixa_acumulada:.2f}</span>', unsafe_allow_html=True)
+    else:
+        saldo_placeholder.write(f'Saldo Acumulado: R$ {baixa_acumulada:.2f}', unsafe_allow_html=True)
 
     col_vazia, col_btn = st.columns([1, 1])
 
@@ -188,7 +238,13 @@ def modal_operacao_multipla(linha_selecionada):
 
     with col_btn:
         if st.button('Confirmar', width='stretch'):
-            'Dev: Valores não liquidados... Operação ainda está em desenvolvimento :)'
+            if  baixa_acumulada > linha_selecionada['Saldo']:
+                st.error(f'Operação negada! O valor acumulado ({baixa_acumulada:.2f}) é maior que o saldo disponível ({linha_selecionada["Saldo"]:.2f}).')
+            else:
+                st.write('< Em desenvolvimento >')
+
+            ## Se houver lançamento no temp_baixas[], ele deve registrar apenas os registros da tabela. Caso não haja lançamento,
+            ## ele deve registrar apenas o que está preenchido na tela.
 
 @st.dialog('Estorno de liquidacao')
 def modal_estorno_liquidacao(linha_selecionada):
