@@ -23,7 +23,7 @@ engine = conectar_banco()
 
 # streamlit pagina
 st.set_page_config(
-    page_title='BASE TESTE',
+    page_title='NEXUS',
     layout='wide',
     initial_sidebar_state='expanded'
     )
