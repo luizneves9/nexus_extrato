@@ -119,7 +119,7 @@ def modal_operacao_multipla(linha_selecionada):
             date_input = st.date_input('Data liq.', value=date.today(), format='YYYY-MM-DD')
 
         with col3:
-            val_input = st.number_input('Valor', step=0.01)
+            val_input = st.number_input('Valor', step=0.01, value=linha_selecionada['Saldo'])
 
         with col4:
             dp_input = st.text_input('DP')
