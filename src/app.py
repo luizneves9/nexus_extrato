@@ -119,7 +119,7 @@ def modal_operacao_multipla(linha_selecionada):
             date_input = st.date_input('Data liq.', value=date.today(), format='YYYY-MM-DD')
 
         with col3:
-            val_input = st.number_input('Valor', step=0.01, value=0.0)
+            val_input = st.number_input('Valor', step=0.01)
 
         with col4:
             dp_input = st.text_input('DP')
@@ -185,7 +185,7 @@ def modal_operacao_multipla(linha_selecionada):
 
             saldo_disponivel = float(linha_selecionada['Saldo'])
 
-            if  saldo_disponivel > 0 and baixa_acumulada > saldo_disponivel:
+            if  saldo_disponivel >= 0 and baixa_acumulada > saldo_disponivel:
                 st.error(f'Operação negada! O valor acumulado ({baixa_acumulada:.2f}) é maior que o saldo disponível ({linha_selecionada["Saldo"]:.2f}).')
             
             elif saldo_disponivel < 0 and baixa_acumulada < saldo_disponivel:
@@ -211,13 +211,13 @@ def modal_operacao_multipla(linha_selecionada):
 
                 else:
 
-                    if linha_selecionada['Saldo'] > 0 and val_input <= 0:
+                    if linha_selecionada['Saldo'] >= 0 and val_input <= 0:
                         st.error('O valor deve ser maior que zero.')
 
                     elif linha_selecionada['Saldo'] < 0 and val_input >= 0:
                         st.error('O valor deve ser menor que zero.')
 
-                    elif linha_selecionada['Saldo'] > 0 and val_input > saldo_disponivel:
+                    elif linha_selecionada['Saldo'] >= 0 and val_input > saldo_disponivel:
                         st.error(f'Operação negada! O valor digitado ({val_input:.2f}) é maior que o saldo disponível ({saldo_disponivel:.2f}).')
 
                     elif linha_selecionada['Saldo'] < 0 and val_input < saldo_disponivel:
