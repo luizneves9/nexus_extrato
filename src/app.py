@@ -63,25 +63,24 @@ def gerar_id_numerico(row):
 
 def salvar_movimentacao(sistema, id_extrato, valor, data_baixa, duplicata, parcela):
 
-    if valor > 0:
-        try:
-            with engine.begin() as conn:
-                query = text('''
-                    INSERT INTO db_liquidacoes (id_extrato, valor, data_liquidacao, sistema, duplicata, parcela)
-                    VALUES (:id, :val, :dt, :sis, :dp, :par)
-                ''')
-                conn.execute(query, {
-                    "id": int(id_extrato),
-                    "val": valor,
-                    "dt": data_baixa,
-                    "sis": sistema,
-                    "dp": duplicata,
-                    "par": parcela
-                })
-                return True
-        except Exception as e:
-            st.error(f'Erro ao salvar no banco: {e}')
-            return False
+    try:
+        with engine.begin() as conn:
+            query = text('''
+                INSERT INTO db_liquidacoes (id_extrato, valor, data_liquidacao, sistema, duplicata, parcela)
+                VALUES (:id, :val, :dt, :sis, :dp, :par)
+            ''')
+            conn.execute(query, {
+                "id": int(id_extrato),
+                "val": valor,
+                "dt": data_baixa,
+                "sis": sistema,
+                "dp": duplicata,
+                "par": parcela
+            })
+            return True
+    except Exception as e:
+        st.error(f'Erro ao salvar no banco: {e}')
+        return False
     
 def deletar_movimentacao(id):
     try:
@@ -190,8 +189,13 @@ def modal_operacao_multipla(linha_selecionada):
         with col6:
             st.write('##')
             if st.button('+', key='add_btn'):
-                if val_input != 0:
-                    st.session_state.temp_baixas.append({'_id': str(uuid.uuid4()), 'Sistema': sistema_input, 'Data liq.': date_input, 'Valor': val_input, 'DP': dp_input, 'Parc.':parc_input})
+
+                if linha_selecionada["Saldo"] > 0:
+                    if val_input > 0:
+                        st.session_state.temp_baixas.append({'_id': str(uuid.uuid4()), 'Sistema': sistema_input, 'Data liq.': date_input, 'Valor': val_input, 'DP': dp_input, 'Parc.':parc_input})
+                else:
+                    if val_input < 0:
+                        st.session_state.temp_baixas.append({'_id': str(uuid.uuid4()), 'Sistema': sistema_input, 'Data liq.': date_input, 'Valor': val_input, 'DP': dp_input, 'Parc.':parc_input})
 
     if st.session_state.temp_baixas:
 
@@ -216,10 +220,17 @@ def modal_operacao_multipla(linha_selecionada):
 
     baixa_acumulada = sum(item['Valor'] for item in st.session_state.temp_baixas)
 
-    if baixa_acumulada > linha_selecionada['Saldo']:
-        st.markdown(f'<span style="color:red">Total acumulado: R$ {baixa_acumulada:.2f}</span>', unsafe_allow_html=True)
+    if linha_selecionada['Saldo'] > 0:
+        if baixa_acumulada > linha_selecionada['Saldo']:
+            st.markdown(f'<span style="color:red">Total acumulado: R$ {baixa_acumulada:.2f}</span>', unsafe_allow_html=True)
+        else:
+            st.markdown(f'Total acumulado: R$ {baixa_acumulada:.2f}')
+
     else:
-        st.markdown(f'Total acumulado: R$ {baixa_acumulada:.2f}')
+        if baixa_acumulada < linha_selecionada['Saldo']:
+            st.markdown(f'<span style="color:red">Total acumulado: R$ {baixa_acumulada:.2f}</span>', unsafe_allow_html=True)
+        else:
+            st.markdown(f'Total acumulado: R$ {baixa_acumulada:.2f}')
 
     col_vazia, col_btn = st.columns([1, 1])
 
@@ -233,9 +244,12 @@ def modal_operacao_multipla(linha_selecionada):
 
             saldo_disponivel = float(linha_selecionada['Saldo'])
 
-            if  baixa_acumulada > saldo_disponivel:
+            if  saldo_disponivel > 0 and baixa_acumulada > saldo_disponivel:
                 st.error(f'Operação negada! O valor acumulado ({baixa_acumulada:.2f}) é maior que o saldo disponível ({linha_selecionada["Saldo"]:.2f}).')
             
+            elif saldo_disponivel < 0 and baixa_acumulada < saldo_disponivel:
+                st.error(f'Operação negada! O valor acumulado ({baixa_acumulada:.2f}) é maior que o saldo disponível ({linha_selecionada["Saldo"]:.2f}).')
+
             else:
                 
                 if 'temp_baixas' in st.session_state and st.session_state.temp_baixas:
@@ -256,11 +270,17 @@ def modal_operacao_multipla(linha_selecionada):
 
                 else:
 
-                    if val_input <= 0:
+                    if linha_selecionada['Saldo'] > 0 and val_input <= 0:
                         st.error('O valor deve ser maior que zero.')
 
-                    elif val_input > saldo_disponivel:
+                    elif linha_selecionada['Saldo'] < 0 and val_input >= 0:
+                        st.error('O valor deve ser menor que zero.')
+
+                    elif linha_selecionada['Saldo'] > 0 and val_input > saldo_disponivel:
                         st.error(f'Operação negada! O valor digitado ({val_input:.2f}) é maior que o saldo disponível ({saldo_disponivel:.2f}).')
+
+                    elif linha_selecionada['Saldo'] < 0 and val_input < saldo_disponivel:
+                        st.error(f'Operação negada! O valor digitado ({val_input:.2f}) é menor que o saldo disponível ({saldo_disponivel:.2f}).')
 
                     else:
 
