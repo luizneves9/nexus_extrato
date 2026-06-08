@@ -96,65 +96,6 @@ def deletar_movimentacao(id):
         st.error(f'Erro ao salvar no banco: {e}')
         return False
 
-@st.dialog('Liquidação')
-def modal_operacao(linha_selecionada):
-    st.markdown(f'### ID: {linha_selecionada["id"]}   -   {linha_selecionada["Empresa"]}')
-    st.markdown(f'### Saldo disponível: {linha_selecionada["Saldo"]:.2f}')
-
-    operacao = st.radio('Sistema', ['Corporativo', 'SSW', 'Delsoft', 'Diversos'])
-
-    valor_final = st.number_input(
-        'Valor de liquidação (R$)',
-        value=float(linha_selecionada['Saldo']),
-        step=0.01,
-        help='Confirme o valor total ou altere para liquidação parcial'
-    )
-    
-    data_liquidacao = st.date_input(
-        'Data da liquidação',
-        value=date.today(),
-        format='YYYY-MM-DD'
-    )
-
-    duplicata_liquidacao = st.text_input('Duplicata')
-
-    parcela_liquidacao = st.text_input('Parcela')
-
-    st.write('')
-
-    col_vazia, col_btn = st.columns([1, 1])
-
-    with col_btn:
-        if st.button('Confirmar liquidação', width='stretch', type='primary'):
-
-            saldo_disponivel = float(linha_selecionada['Saldo'])
-
-            if valor_final <= 0:
-                st.error('O valor deve ser maior que zero.')
-
-            elif valor_final > saldo_disponivel:
-                st.error(f'Operação negada! O valor digitado ({valor_final:.2f}) é maior que o saldo disponível ({saldo_disponivel:.2f}).')
-
-            else:
-
-                sucesso = salvar_movimentacao(
-                    id_extrato=linha_selecionada['id'],
-                    valor=valor_final,
-                    data_baixa=data_liquidacao,
-                    sistema=operacao,
-                    duplicata=duplicata_liquidacao,
-                    parcela=parcela_liquidacao
-                )
-
-                if sucesso:
-                    st.success('Liquidação registrada!')
-                    st.session_state.last_update += 1
-                    st.rerun()
-
-    with col_vazia:
-        if st.button('Cancelar', width='stretch'):
-            st.rerun()
-
 @st.dialog('Liquidação Multipla', width='medium')
 def modal_operacao_multipla(linha_selecionada):
 
