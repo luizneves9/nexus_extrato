@@ -156,78 +156,70 @@ def modal_operacao(linha_selecionada):
         if st.button('Cancelar', width='stretch'):
             st.rerun()
 
-@st.dialog('Liquidação Multipla')
+@st.dialog('Liquidação Multipla', width='medium')
 def modal_operacao_multipla(linha_selecionada):
+
+    def excluir_registro(id_deletar):
+        st.session_state.temp_baixas = [
+            x for x in st.session_state.temp_baixas if x['_id'] != id_deletar
+        ]
 
     if 'temp_baixas' not in st.session_state:
         st.session_state.temp_baixas = []
 
-    if 'input_reset_count' not in st.session_state:
-        st.session_state.input_reset_count = 0
-
-    reset_key = st.session_state.input_reset_count
-
     st.write(f'{linha_selecionada["id"]} - {linha_selecionada["Empresa"]}')
     st.write(f'Saldo: R$ {linha_selecionada["Saldo"]:.2f}')
 
-    saldo_placeholder = st.empty()
-
     with st.container(border=True):
-        col1, col2, col3, col4, col5 = st.columns([2, 2, 2, 1, 1])
+        col1, col2, col3, col4, col5, col6 = st.columns([2.5, 2, 2.9, 1.5, 1, 1])
         with col1:
-            sistema_input = st.selectbox('Sistema', ['Corporativo', 'SSW', 'Delsoft', 'Diversos'], key=f'sis_in_{reset_key}')
+            sistema_input = st.selectbox('Sistema', ['Corporativo', 'SSW', 'Delsoft', 'Diversos'])
+        
         with col2:
-            if 'val_in_reset' not in st.session_state:
-                st.session_state.val_in_reset = 0.0
-            val_input = st.number_input('Valor', step=0.01, key=f'val_in_{reset_key}')
-        with col3:
-            if 'dp_in_reset' not in st.session_state:
-                st.session_state.dp_in_reset = ''
-            dp_input = st.text_input('DP', key=f'dp_in_{reset_key}')
-            
-        with col4:
-            if 'parc_in_reset' not in st.session_state:
-                st.session_state.parc_in_reset = ''
-            parc_input = st.text_input('Parc.', key=f'parc_in_{reset_key}')
+            date_input = st.date_input('Data liq.', value=date.today(), format='YYYY-MM-DD')
 
+        with col3:
+            val_input = st.number_input('Valor', step=0.01, value=0.0)
+
+        with col4:
+            dp_input = st.text_input('DP')
+            
         with col5:
+            parc_input = st.text_input('Parc.', value='')
+
+        with col6:
             st.write('##')
             if st.button('+', key='add_btn'):
                 if val_input != 0:
-                    st.session_state.temp_baixas.append({'_id': str(uuid.uuid4()), 'Sistema': sistema_input, 'Valor': val_input, 'DP': dp_input, 'Parc.':parc_input})
-                    st.session_state.input_reset_count += 1
+                    st.session_state.temp_baixas.append({'_id': str(uuid.uuid4()), 'Sistema': sistema_input, 'Data liq.': date_input, 'Valor': val_input, 'DP': dp_input, 'Parc.':parc_input})
 
     if st.session_state.temp_baixas:
-        #df_temp = pd.DataFrame(st.session_state.temp_baixas)
-        #st.table(df_temp)
 
         with st.container(border=True):
 
-            col_sis, col_val, col_dp, col_parc, col_btn = st.columns([2, 1, 1, 1, 1])
+            col_sis, col_date, col_val, col_dp, col_parc, col_btn = st.columns([1, 1, 1, 1, 1, 1])
             col_sis.write('**Sistema**')
+            col_date.write('**Data liq.**')
             col_val.write('**Valor**')
             col_dp.write('**DP**')
             col_parc.write('**Parc.**')
             col_btn.write('**Ação**')
 
             for item in st.session_state.temp_baixas:
-                c1, c2, c3, c4, c5 = st.columns([2, 1, 1, 1, 1])
+                c1, c2, c3, c4, c5, c6 = st.columns([1, 1, 1, 1, 1, 1])
                 c1.write(item['Sistema'])
-                c2.write(f'{item["Valor"]}')
-                c3.write(item['DP'])
-                c4.write(item['Parc.'])
-
-                if c5.button('-', key=f'btn_del_{item["_id"]}'):
-                    st.session_state.temp_baixas = [
-                        x for x in st.session_state.temp_baixas if x['_id'] != item['_id']
-                    ]
+                c2.write(f'{item['Data liq.']}')
+                c3.write(f'{item["Valor"]}')
+                c4.write(item['DP'])
+                c5.write(item['Parc.'])
+                c6.button('-', key=f'btn_del_{item["_id"]}', on_click=excluir_registro, args=(item['_id'],))
 
     baixa_acumulada = sum(item['Valor'] for item in st.session_state.temp_baixas)
 
     if baixa_acumulada > linha_selecionada['Saldo']:
-        saldo_placeholder.write(f'<span style="color:red">Saldo Acumulado: R$ {baixa_acumulada:.2f}</span>', unsafe_allow_html=True)
+        st.markdown(f'<span style="color:red">Total acumulado: R$ {baixa_acumulada:.2f}</span>', unsafe_allow_html=True)
     else:
-        saldo_placeholder.write(f'Saldo Acumulado: R$ {baixa_acumulada:.2f}', unsafe_allow_html=True)
+        st.markdown(f'Total acumulado: R$ {baixa_acumulada:.2f}')
 
     col_vazia, col_btn = st.columns([1, 1])
 
@@ -238,13 +230,53 @@ def modal_operacao_multipla(linha_selecionada):
 
     with col_btn:
         if st.button('Confirmar', width='stretch'):
-            if  baixa_acumulada > linha_selecionada['Saldo']:
-                st.error(f'Operação negada! O valor acumulado ({baixa_acumulada:.2f}) é maior que o saldo disponível ({linha_selecionada["Saldo"]:.2f}).')
-            else:
-                st.write('< Em desenvolvimento >')
 
-            ## Se houver lançamento no temp_baixas[], ele deve registrar apenas os registros da tabela. Caso não haja lançamento,
-            ## ele deve registrar apenas o que está preenchido na tela.
+            saldo_disponivel = float(linha_selecionada['Saldo'])
+
+            if  baixa_acumulada > saldo_disponivel:
+                st.error(f'Operação negada! O valor acumulado ({baixa_acumulada:.2f}) é maior que o saldo disponível ({linha_selecionada["Saldo"]:.2f}).')
+            
+            else:
+                
+                if 'temp_baixas' in st.session_state and st.session_state.temp_baixas:
+                    
+                    for item in st.session_state.temp_baixas:
+
+                        sucesso = salvar_movimentacao(
+                            id_extrato=linha_selecionada['id'],
+                            valor=item['Valor'],
+                            data_baixa=item['Data liq.'],
+                            sistema=item['Sistema'],
+                            duplicata=item['DP'],
+                            parcela=item['Parc.']
+                        )
+
+                    st.session_state.last_update += 1
+                    st.rerun()
+
+                else:
+
+                    if val_input <= 0:
+                        st.error('O valor deve ser maior que zero.')
+
+                    elif val_input > saldo_disponivel:
+                        st.error(f'Operação negada! O valor digitado ({val_input:.2f}) é maior que o saldo disponível ({saldo_disponivel:.2f}).')
+
+                    else:
+
+                        sucesso = salvar_movimentacao(
+                            id_extrato=linha_selecionada['id'],
+                            valor=val_input,
+                            data_baixa=date_input,
+                            sistema=sistema_input,
+                            duplicata=dp_input,
+                            parcela=parc_input
+                        )
+
+                        if sucesso:
+                            st.success('Liquidação registrada!')
+                            st.session_state.last_update += 1
+                            st.rerun()
 
 @st.dialog('Estorno de liquidacao')
 def modal_estorno_liquidacao(linha_selecionada):
@@ -530,16 +562,7 @@ if __name__ == "__main__":
             else:
                 linha = selecionados.iloc[0]
 
-                col1, col2 = st.columns([1, 7])
-
-                with col1:
-
-                    if st.button(f'Liquidar', type='primary'):
-                        modal_operacao(linha)
-
-                with col2:
-
-                    if st.button(f'Liquidação Múltipla < em desenvolvimento >', type='primary'):
+                if st.button(f'Liquidar', type='primary'):
                         st.session_state.temp_baixas = []
                         modal_operacao_multipla(linha)
 
