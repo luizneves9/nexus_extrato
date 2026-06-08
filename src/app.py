@@ -370,7 +370,7 @@ if __name__ == "__main__":
     lista_datas_extrato, lista_empresas, lista_datas_liquidacao = carregar_filtro(engine, st.session_state.last_update)
 
     with st.sidebar:
-        st.title('< BASE TESTE >')
+        st.title('NEXUS')
         st.header('Menu:')
         pagina = st.radio('Menu', ['Extrato', 'Liquidações'], label_visibility='collapsed')
         st.header('Configurações:')
