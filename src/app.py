@@ -10,6 +10,7 @@ import streamlit as st
 from sqlalchemy import text
 from datetime import date
 import warnings
+import uuid
 
 ## configurações iniciais
 
@@ -62,25 +63,24 @@ def gerar_id_numerico(row):
 
 def salvar_movimentacao(sistema, id_extrato, valor, data_baixa, duplicata, parcela):
 
-    if valor > 0:
-        try:
-            with engine.begin() as conn:
-                query = text('''
-                    INSERT INTO db_liquidacoes (id_extrato, valor, data_liquidacao, sistema, duplicata, parcela)
-                    VALUES (:id, :val, :dt, :sis, :dp, :par)
-                ''')
-                conn.execute(query, {
-                    "id": int(id_extrato),
-                    "val": valor,
-                    "dt": data_baixa,
-                    "sis": sistema,
-                    "dp": duplicata,
-                    "par": parcela
-                })
-                return True
-        except Exception as e:
-            st.error(f'Erro ao salvar no banco: {e}')
-            return False
+    try:
+        with engine.begin() as conn:
+            query = text('''
+                INSERT INTO db_liquidacoes (id_extrato, valor, data_liquidacao, sistema, duplicata, parcela)
+                VALUES (:id, :val, :dt, :sis, :dp, :par)
+            ''')
+            conn.execute(query, {
+                "id": int(id_extrato),
+                "val": valor,
+                "dt": data_baixa,
+                "sis": sistema,
+                "dp": duplicata,
+                "par": parcela
+            })
+            return True
+    except Exception as e:
+        st.error(f'Erro ao salvar no banco: {e}')
+        return False
     
 def deletar_movimentacao(id):
     try:
@@ -96,88 +96,82 @@ def deletar_movimentacao(id):
         st.error(f'Erro ao salvar no banco: {e}')
         return False
 
-@st.dialog('Liquidação')
-def modal_operacao(linha_selecionada):
-    st.markdown(f'### ID: {linha_selecionada["id"]}   -   {linha_selecionada["Empresa"]}')
-    st.markdown(f'### Saldo disponível: {linha_selecionada["Saldo"]:.2f}')
-
-    operacao = st.radio('Sistema', ['Corporativo', 'SSW', 'Delsoft', 'Diversos'])
-
-    valor_final = st.number_input(
-        'Valor de liquidação (R$)',
-        value=float(linha_selecionada['Saldo']),
-        step=0.01,
-        help='Confirme o valor total ou altere para liquidação parcial'
-    )
-    
-    data_liquidacao = st.date_input(
-        'Data da liquidação',
-        value=date.today(),
-        format='YYYY-MM-DD'
-    )
-
-    duplicata_liquidacao = st.text_input('Duplicata')
-
-    parcela_liquidacao = st.text_input('Parcela')
-
-    st.write('')
-
-    col_vazia, col_btn = st.columns([1, 1])
-
-    with col_btn:
-        if st.button('Confirmar liquidação', width='stretch', type='primary'):
-
-            saldo_disponivel = float(linha_selecionada['Saldo'])
-
-            if valor_final <= 0:
-                st.error('O valor deve ser maior que zero.')
-
-            elif valor_final > saldo_disponivel:
-                st.error(f'Operação negada! O valor digitado ({valor_final:.2f}) é maior que o saldo disponível ({saldo_disponivel:.2f}).')
-
-            else:
-
-                sucesso = salvar_movimentacao(
-                    id_extrato=linha_selecionada['id'],
-                    valor=valor_final,
-                    data_baixa=data_liquidacao,
-                    sistema=operacao,
-                    duplicata=duplicata_liquidacao,
-                    parcela=parcela_liquidacao
-                )
-
-                if sucesso:
-                    st.success('Liquidação registrada!')
-                    st.session_state.last_update += 1
-                    st.rerun()
-
-    with col_vazia:
-        if st.button('Cancelar', width='stretch'):
-            st.rerun()
-
-@st.dialog('Liquidação Multipla')
+@st.dialog('Liquidação Multipla', width='medium')
 def modal_operacao_multipla(linha_selecionada):
-    st.markdown(f'### ID: {linha_selecionada["id"]}   -   {linha_selecionada["Empresa"]}')
-    st.markdown(f'### Saldo disponível: {linha_selecionada["Saldo"]:.2f}')
+
+    def excluir_registro(id_deletar):
+        st.session_state.temp_baixas = [
+            x for x in st.session_state.temp_baixas if x['_id'] != id_deletar
+        ]
+
+    if 'temp_baixas' not in st.session_state:
+        st.session_state.temp_baixas = []
+
+    st.write(f'{linha_selecionada["id"]} - {linha_selecionada["Empresa"]}')
+    st.write(f'Saldo: R$ {linha_selecionada["Saldo"]:.2f}')
 
     with st.container(border=True):
-        col1, col2, col3, col4 = st.columns(4)
+        col1, col2, col3, col4, col5, col6 = st.columns([2.5, 2, 2.9, 1.5, 1, 1])
         with col1:
             sistema_input = st.selectbox('Sistema', ['Corporativo', 'SSW', 'Delsoft', 'Diversos'])
+        
         with col2:
-            val_input = st.number_input('Valor', step=0.01)
-        with col3:
-            dp_input = st.text_input('Duplicata')
-        with col4:
-            parc_input = st.text_input('Parcela')
+            date_input = st.date_input('Data liq.', value=date.today(), format='YYYY-MM-DD')
 
-        if st.button('Adicionar'):
-            if val_input != 0:
-                st.session_state.temp_baixas.append({'Sistema': sistema_input, 'Valor': val_input, 'DP': dp_input, 'Parc.':parc_input})
+        with col3:
+            val_input = st.number_input('Valor', step=0.01, value=0.0)
+
+        with col4:
+            dp_input = st.text_input('DP')
+            
+        with col5:
+            parc_input = st.text_input('Parc.', value='')
+
+        with col6:
+            st.write('##')
+            if st.button('+', key='add_btn'):
+
+                if linha_selecionada["Saldo"] > 0:
+                    if val_input > 0:
+                        st.session_state.temp_baixas.append({'_id': str(uuid.uuid4()), 'Sistema': sistema_input, 'Data liq.': date_input, 'Valor': val_input, 'DP': dp_input, 'Parc.':parc_input})
+                else:
+                    if val_input < 0:
+                        st.session_state.temp_baixas.append({'_id': str(uuid.uuid4()), 'Sistema': sistema_input, 'Data liq.': date_input, 'Valor': val_input, 'DP': dp_input, 'Parc.':parc_input})
 
     if st.session_state.temp_baixas:
-        df_temp = pd.DataFrame(st.session_state.temp_baixas)
-        st.table(df_temp)
+
+        with st.container(border=True):
+
+            col_sis, col_date, col_val, col_dp, col_parc, col_btn = st.columns([1, 1, 1, 1, 1, 1])
+            col_sis.write('**Sistema**')
+            col_date.write('**Data liq.**')
+            col_val.write('**Valor**')
+            col_dp.write('**DP**')
+            col_parc.write('**Parc.**')
+            col_btn.write('**Ação**')
+
+            for item in st.session_state.temp_baixas:
+                c1, c2, c3, c4, c5, c6 = st.columns([1, 1, 1, 1, 1, 1])
+                c1.write(item['Sistema'])
+                c2.write(f'{item['Data liq.']}')
+                c3.write(f'{item["Valor"]}')
+                c4.write(item['DP'])
+                c5.write(item['Parc.'])
+                c6.button('-', key=f'btn_del_{item["_id"]}', on_click=excluir_registro, args=(item['_id'],))
+
+    baixa_acumulada = sum(item['Valor'] for item in st.session_state.temp_baixas)
+
+    if linha_selecionada['Saldo'] > 0:
+        if baixa_acumulada > linha_selecionada['Saldo']:
+            st.markdown(f'<span style="color:red">Total acumulado: R$ {baixa_acumulada:.2f}</span>', unsafe_allow_html=True)
+        else:
+            st.markdown(f'Total acumulado: R$ {baixa_acumulada:.2f}')
+
+    else:
+        if baixa_acumulada < linha_selecionada['Saldo']:
+            st.markdown(f'<span style="color:red">Total acumulado: R$ {baixa_acumulada:.2f}</span>', unsafe_allow_html=True)
+        else:
+            st.markdown(f'Total acumulado: R$ {baixa_acumulada:.2f}')
 
     col_vazia, col_btn = st.columns([1, 1])
 
@@ -188,7 +182,62 @@ def modal_operacao_multipla(linha_selecionada):
 
     with col_btn:
         if st.button('Confirmar', width='stretch'):
-            'Dev: Valores não liquidados... Operação ainda está em desenvolvimento :)'
+
+            saldo_disponivel = float(linha_selecionada['Saldo'])
+
+            if  saldo_disponivel > 0 and baixa_acumulada > saldo_disponivel:
+                st.error(f'Operação negada! O valor acumulado ({baixa_acumulada:.2f}) é maior que o saldo disponível ({linha_selecionada["Saldo"]:.2f}).')
+            
+            elif saldo_disponivel < 0 and baixa_acumulada < saldo_disponivel:
+                st.error(f'Operação negada! O valor acumulado ({baixa_acumulada:.2f}) é maior que o saldo disponível ({linha_selecionada["Saldo"]:.2f}).')
+
+            else:
+                
+                if 'temp_baixas' in st.session_state and st.session_state.temp_baixas:
+                    
+                    for item in st.session_state.temp_baixas:
+
+                        sucesso = salvar_movimentacao(
+                            id_extrato=linha_selecionada['id'],
+                            valor=item['Valor'],
+                            data_baixa=item['Data liq.'],
+                            sistema=item['Sistema'],
+                            duplicata=item['DP'],
+                            parcela=item['Parc.']
+                        )
+
+                    st.session_state.last_update += 1
+                    st.rerun()
+
+                else:
+
+                    if linha_selecionada['Saldo'] > 0 and val_input <= 0:
+                        st.error('O valor deve ser maior que zero.')
+
+                    elif linha_selecionada['Saldo'] < 0 and val_input >= 0:
+                        st.error('O valor deve ser menor que zero.')
+
+                    elif linha_selecionada['Saldo'] > 0 and val_input > saldo_disponivel:
+                        st.error(f'Operação negada! O valor digitado ({val_input:.2f}) é maior que o saldo disponível ({saldo_disponivel:.2f}).')
+
+                    elif linha_selecionada['Saldo'] < 0 and val_input < saldo_disponivel:
+                        st.error(f'Operação negada! O valor digitado ({val_input:.2f}) é menor que o saldo disponível ({saldo_disponivel:.2f}).')
+
+                    else:
+
+                        sucesso = salvar_movimentacao(
+                            id_extrato=linha_selecionada['id'],
+                            valor=val_input,
+                            data_baixa=date_input,
+                            sistema=sistema_input,
+                            duplicata=dp_input,
+                            parcela=parc_input
+                        )
+
+                        if sucesso:
+                            st.success('Liquidação registrada!')
+                            st.session_state.last_update += 1
+                            st.rerun()
 
 @st.dialog('Estorno de liquidacao')
 def modal_estorno_liquidacao(linha_selecionada):
@@ -474,16 +523,7 @@ if __name__ == "__main__":
             else:
                 linha = selecionados.iloc[0]
 
-                col1, col2 = st.columns([1, 7])
-
-                with col1:
-
-                    if st.button(f'Liquidar', type='primary'):
-                        modal_operacao(linha)
-
-                with col2:
-
-                    if st.button(f'Liquidação Múltipla < em desenvolvimento >', type='primary'):
+                if st.button(f'Liquidar', type='primary'):
                         st.session_state.temp_baixas = []
                         modal_operacao_multipla(linha)
 

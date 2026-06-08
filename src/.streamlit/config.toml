@@ -1,9 +1,0 @@
-[theme]
-base = "dark"
-
-[server]
-runOnSave = true
-headless = true
-
-[browser]
-gatherUsageStats = false
