@@ -116,7 +116,7 @@ def modal_operacao_multipla(linha_selecionada):
             sistema_input = st.selectbox('Sistema', ['Corporativo', 'SSW', 'Delsoft', 'Diversos'])
         
         with col2:
-            date_input = st.date_input('Data liq.', value=date.today(), format='YYYY-MM-DD')
+            date_input = st.date_input('Data liq.', value=linha_selecionada['Data'], format='YYYY-MM-DD')
 
         with col3:
             val_input = st.number_input('Valor', step=0.01, value=linha_selecionada['Saldo'])
@@ -131,12 +131,14 @@ def modal_operacao_multipla(linha_selecionada):
             st.write('##')
             if st.button('+', key='add_btn'):
 
-                if linha_selecionada["Saldo"] > 0:
-                    if val_input > 0:
-                        st.session_state.temp_baixas.append({'_id': str(uuid.uuid4()), 'Sistema': sistema_input, 'Data liq.': date_input, 'Valor': val_input, 'DP': dp_input, 'Parc.':parc_input})
-                else:
-                    if val_input < 0:
-                        st.session_state.temp_baixas.append({'_id': str(uuid.uuid4()), 'Sistema': sistema_input, 'Data liq.': date_input, 'Valor': val_input, 'DP': dp_input, 'Parc.':parc_input})
+                if (sistema_input == 'Corporativo' and dp_input.strip() != '' and parc_input.strip() != '') or (sistema_input == 'SSW' and dp_input.strip() != '') or (sistema_input == 'Delsoft' and dp_input.strip() != '') or (sistema_input == 'Diversos' and dp_input.strip() != ''):
+
+                    if linha_selecionada["Saldo"] > 0:
+                        if val_input > 0:
+                            st.session_state.temp_baixas.append({'_id': str(uuid.uuid4()), 'Sistema': sistema_input, 'Data liq.': date_input, 'Valor': val_input, 'DP': dp_input, 'Parc.':parc_input})
+                    else:
+                        if val_input < 0:
+                            st.session_state.temp_baixas.append({'_id': str(uuid.uuid4()), 'Sistema': sistema_input, 'Data liq.': date_input, 'Valor': val_input, 'DP': dp_input, 'Parc.':parc_input})
 
     if st.session_state.temp_baixas:
 
@@ -222,6 +224,18 @@ def modal_operacao_multipla(linha_selecionada):
 
                     elif linha_selecionada['Saldo'] < 0 and val_input < saldo_disponivel:
                         st.error(f'Operação negada! O valor digitado ({val_input:.2f}) é menor que o saldo disponível ({saldo_disponivel:.2f}).')
+
+                    elif (sistema_input == 'Corporativo' and (dp_input.strip() == '' or parc_input.strip() == '')):
+                        st.error(f'Operação negada! Favor preencher a DP e Parcela.')
+                    
+                    elif (sistema_input == 'SSW' and dp_input.strip() == ''):
+                        st.error(f'Operação negada! Favor preencher a DP.')
+                    
+                    elif (sistema_input == 'Delsoft' and dp_input.strip() == ''):
+                        st.error(f'Operação negada! Favor preencher a DP/Histórico.')
+                    
+                    elif (sistema_input == 'Diversos' and dp_input.strip() == ''):
+                        st.error(f'Operação negada! Favor preencher a DP/Histórico.')
 
                     else:
 
