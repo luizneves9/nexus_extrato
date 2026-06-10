@@ -96,6 +96,12 @@ def deletar_movimentacao(id):
         st.error(f'Erro ao salvar no banco: {e}')
         return False
 
+def transformar_valor_decimal_em_str(valor):
+    return f'{valor:,.2f}'.replace(',', 'v').replace('.', ',').replace('v', '.')
+
+def transformar_valor_decimal_str_em_float(valor):
+    return float(valor.replace('.', '').replace(',', '.'))
+
 @st.dialog('Liquidação Multipla', width='medium')
 def modal_operacao_multipla(linha_selecionada):
 
@@ -108,7 +114,7 @@ def modal_operacao_multipla(linha_selecionada):
         st.session_state.temp_baixas = []
 
     st.write(f'{linha_selecionada["id"]} - {linha_selecionada["Empresa"]}')
-    st.write(f'Saldo: R$ {linha_selecionada["Saldo"]:.2f}')
+    st.write(f'Saldo: R$ {transformar_valor_decimal_em_str(linha_selecionada["Saldo"])}')
 
     with st.container(border=True):
         col1, col2, col3, col4, col5, col6 = st.columns([2.5, 2, 2.9, 1.5, 1, 1])
@@ -156,7 +162,7 @@ def modal_operacao_multipla(linha_selecionada):
                 c1, c2, c3, c4, c5, c6 = st.columns([1, 1, 1, 1, 1, 1])
                 c1.write(item['Sistema'])
                 c2.write(f'{item['Data liq.']}')
-                c3.write(f'{item["Valor"]}')
+                c3.write(f'{transformar_valor_decimal_em_str(item["Valor"])}')
                 c4.write(item['DP'])
                 c5.write(item['Parc.'])
                 c6.button('-', key=f'btn_del_{item["_id"]}', on_click=excluir_registro, args=(item['_id'],))
@@ -165,15 +171,15 @@ def modal_operacao_multipla(linha_selecionada):
 
     if linha_selecionada['Saldo'] > 0:
         if baixa_acumulada > linha_selecionada['Saldo']:
-            st.markdown(f'<span style="color:red">Total acumulado: R$ {baixa_acumulada:.2f}</span>', unsafe_allow_html=True)
+            st.markdown(f'<span style="color:red">Total acumulado: R$ {transformar_valor_decimal_em_str(baixa_acumulada)}</span>', unsafe_allow_html=True)
         else:
-            st.markdown(f'Total acumulado: R$ {baixa_acumulada:.2f}')
+            st.markdown(f'Total acumulado: R$ {transformar_valor_decimal_em_str(baixa_acumulada)}')
 
     else:
         if baixa_acumulada < linha_selecionada['Saldo']:
-            st.markdown(f'<span style="color:red">Total acumulado: R$ {baixa_acumulada:.2f}</span>', unsafe_allow_html=True)
+            st.markdown(f'<span style="color:red">Total acumulado: R$ {transformar_valor_decimal_em_str(baixa_acumulada)}</span>', unsafe_allow_html=True)
         else:
-            st.markdown(f'Total acumulado: R$ {baixa_acumulada:.2f}')
+            st.markdown(f'Total acumulado: R$ {transformar_valor_decimal_em_str(baixa_acumulada)}')
 
     col_vazia, col_btn = st.columns([1, 1])
 
@@ -188,10 +194,10 @@ def modal_operacao_multipla(linha_selecionada):
             saldo_disponivel = float(linha_selecionada['Saldo'])
 
             if  saldo_disponivel >= 0 and baixa_acumulada > saldo_disponivel:
-                st.error(f'Operação negada! O valor acumulado ({baixa_acumulada:.2f}) é maior que o saldo disponível ({linha_selecionada["Saldo"]:.2f}).')
+                st.error(f'Operação negada! O valor acumulado ({transformar_valor_decimal_em_str(baixa_acumulada)}) é maior que o saldo disponível ({transformar_valor_decimal_em_str(linha_selecionada["Saldo"])}).')
             
             elif saldo_disponivel < 0 and baixa_acumulada < saldo_disponivel:
-                st.error(f'Operação negada! O valor acumulado ({baixa_acumulada:.2f}) é maior que o saldo disponível ({linha_selecionada["Saldo"]:.2f}).')
+                st.error(f'Operação negada! O valor acumulado ({transformar_valor_decimal_em_str(baixa_acumulada)}) é maior que o saldo disponível ({transformar_valor_decimal_em_str(linha_selecionada["Saldo"])}).')
 
             else:
                 
@@ -220,10 +226,10 @@ def modal_operacao_multipla(linha_selecionada):
                         st.error('O valor deve ser menor que zero.')
 
                     elif linha_selecionada['Saldo'] >= 0 and val_input > saldo_disponivel:
-                        st.error(f'Operação negada! O valor digitado ({val_input:.2f}) é maior que o saldo disponível ({saldo_disponivel:.2f}).')
+                        st.error(f'Operação negada! O valor digitado ({transformar_valor_decimal_em_str(val_input)}) é maior que o saldo disponível ({transformar_valor_decimal_em_str(saldo_disponivel)}).')
 
                     elif linha_selecionada['Saldo'] < 0 and val_input < saldo_disponivel:
-                        st.error(f'Operação negada! O valor digitado ({val_input:.2f}) é menor que o saldo disponível ({saldo_disponivel:.2f}).')
+                        st.error(f'Operação negada! O valor digitado ({transformar_valor_decimal_em_str(val_input)}) é menor que o saldo disponível ({transformar_valor_decimal_em_str(saldo_disponivel)}).')
 
                     elif (sistema_input == 'Corporativo' and (dp_input.strip() == '' or parc_input.strip() == '')):
                         st.error(f'Operação negada! Favor preencher a DP e Parcela.')
@@ -256,7 +262,7 @@ def modal_operacao_multipla(linha_selecionada):
 @st.dialog('Estorno de liquidacao')
 def modal_estorno_liquidacao(linha_selecionada):
     st.markdown(f'### ID: {linha_selecionada["ID"]}')
-    st.markdown(f'Valor: {linha_selecionada["Valor liq."]}')
+    st.markdown(f'Valor: {transformar_valor_decimal_em_str(linha_selecionada["Valor liq."])}')
 
     st.write('')
 
@@ -276,6 +282,40 @@ def modal_estorno_liquidacao(linha_selecionada):
     with col_vazia:
         if st.button('Cancelar', width='stretch'):
             st.rerun()
+
+@st.dialog(' ', width='medium')
+def detalhar_lancamentos(dados, linha_selecionada):
+    
+    st.markdown(f'## Registro bancário: {linha_selecionada['Empresa'].title()}')
+    
+    ## exibindo o crédito bancário
+
+    # transformando em dataframe
+    df = [{
+        'ID': linha_selecionada['id'],
+        'Data': linha_selecionada['Data'],
+        'Banco': linha_selecionada['Banco'],
+        'Agência/Conta': linha_selecionada['Agência/Conta'],
+        'Desc. do Hist.': linha_selecionada['Desc. do Hist.'],
+        'Valor': linha_selecionada['Valor'],
+        'Valor liq.': linha_selecionada['Valor liq.'],
+        'Saldo': linha_selecionada['Saldo']
+    }]
+
+    df_extrato = pd.DataFrame(df)
+
+    # transformando as colunas de valor para a formatação brasileira
+    colunas_valor = ['Valor', 'Valor liq.', 'Saldo']
+    for col in colunas_valor:
+        df_extrato[col] = df_extrato[col].map(transformar_valor_decimal_em_str)
+
+    st.dataframe(df_extrato, hide_index=True)
+
+    st.markdown('## Lançamentos realizados:')
+
+    dados['Valor liq.'] = dados['Valor liq.'].map(transformar_valor_decimal_em_str)
+
+    st.dataframe(dados, hide_index=True)
 
 def main():
 
@@ -513,6 +553,11 @@ if __name__ == "__main__":
         df_com_selecao = df_resultado.copy()
         df_com_selecao.insert(0, 'Sel', False)
 
+        colunas_valor = ['Valor', 'Valor liq.', 'Saldo']
+
+        for col in colunas_valor:
+            df_com_selecao[col] = df_com_selecao[col].map(transformar_valor_decimal_em_str)
+
         tabela_editavel = st.data_editor(
             df_com_selecao,
             key='editor_extratos',
@@ -521,9 +566,6 @@ if __name__ == "__main__":
             column_config={
                 'Sel': st.column_config.CheckboxColumn('', default=False),
                 'ID': st.column_config.NumberColumn('ID', format='%d'),
-                'Valor': st.column_config.NumberColumn('Valor', format='%.2f'),
-                'Valor liq.': st.column_config.NumberColumn('Valor liq.', format='%.2f'),
-                'Saldo': st.column_config.NumberColumn('Saldo atual', format='%.2f'),
                 'Data': st.column_config.DateColumn('Data', format='DD/MM/YYYY')
             },
             disabled=[c for c in df_com_selecao.columns if c!= 'Sel']
@@ -537,9 +579,47 @@ if __name__ == "__main__":
             else:
                 linha = selecionados.iloc[0]
 
-                if st.button(f'Liquidar', type='primary'):
-                        st.session_state.temp_baixas = []
-                        modal_operacao_multipla(linha)
+                with st.container(horizontal=True):
+
+                    if st.button(f'Liquidar', type='primary'):
+                            
+                            for col in colunas_valor:
+                                linha[col] = transformar_valor_decimal_str_em_float(linha[col])
+
+                            st.session_state.temp_baixas = []
+                            modal_operacao_multipla(linha)
+
+                    detalhar = st.button(f'Detalhar Lançamentos', type='primary')
+
+                if detalhar:
+
+                    for col in colunas_valor:
+                                linha[col] = transformar_valor_decimal_str_em_float(linha[col])
+
+                    id_selecionado = str(linha['id'])
+
+                    params_lanc = {'id_selecionado_extrato': id_selecionado}
+
+                    query_liquidacoes = '''
+                        SELECT 
+                            "ID",
+                            "Data liq.",
+                            "Sistema",
+                            "DP",
+                            "Parc.",
+                            "Valor liq.",
+                            "Data log"::date
+                        FROM vw_registro_liquidacoes
+                        WHERE "ID extrato" = :id_selecionado_extrato
+                    '''
+
+                    df_lancamentos = pd.read_sql(text(query_liquidacoes), engine, params=params_lanc)
+                    
+                    #st.title('Lançamentos:')
+                    if df_lancamentos.empty:
+                        st.markdown('<span style="color:red">Sem registros!</span>', unsafe_allow_html=True)
+                    else:
+                       detalhar_lancamentos(df_lancamentos, linha)
 
         else:
             st.caption('Selecione um registro acima para habilitar as opções de liquidação.')
