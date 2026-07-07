@@ -10,7 +10,7 @@ def upsert_extrato(df, engine, nome_arquivo, diretorio_arquivo):
         with engine.begin() as conn:
 
             # criando tabela temporário
-            conn.execute(text("CREATE TEMPORARY TABLE temp_extrato (LIKE db_extratos INCLUDING ALL) ON COMMIT DROP;"))
+            conn.execute(text("CREATE TEMPORARY TABLE temp_extrato (LIKE public.db_extratos INCLUDING ALL) ON COMMIT DROP;"))
 
             # incluindo os dados na tabela temporária
             df.to_sql(name='temp_extrato', con=conn, if_exists='append', index=False) #type: ignore

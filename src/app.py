@@ -11,6 +11,50 @@ from sqlalchemy import text
 from datetime import date
 import warnings
 import uuid
+from dotenv import load_dotenv
+
+# =========================================================================
+# CONFIGURAÇÃO DE SEGURANÇA
+# =========================================================================
+
+load_dotenv()
+
+def verificar_acesso_ip():
+    """
+    Valida se o IP de quem está acessando o Streamlit está na lista
+    de IPs permitidos configurada no .env ou no Railway.
+    """
+    ips_configurados = os.getenv("IPS_PERMITIDOS", "")
+    
+    if not ips_configurados:
+        st.warning("Nenhuma rede homologada configurada em 'IPS_PERMITIDOS'.")
+        return False
+        
+    lista_ips_autorizados = [ip.strip() for ip in ips_configurados.split(",")]
+    headers = st.context.headers
+    ip_usuario = headers.get("x-forwarded-for")
+
+    # Tratamento para Desenvolvimento Local via localhost
+    if not ip_usuario or ip_usuario in ["127.0.0.1", "localhost", "::1"]:
+        return True
+
+    # Tratamento para testES usando a rede/IP real (Network URL)
+    if "," in ip_usuario:
+        ip_usuario = ip_usuario.split(",")[0].strip()
+
+    return ip_usuario in lista_ips_autorizados
+
+# =========================================================================
+# VALIDADOR DE SEGURANÇA
+# =========================================================================
+
+if not verificar_acesso_ip():
+    st.error("**Acesso Não Autorizado**")
+    st.stop()
+
+# =========================================================================
+# DESENVOLVIMENTO
+# =========================================================================
 
 ## configurações iniciais
 
@@ -32,8 +76,8 @@ st.set_page_config(
 def carregar_filtro(_engine, trigger_atualizacao):
 
     # carregando as datas
-    query_datas_extrato = 'SELECT DISTINCT data_contabil FROM db_extratos ORDER BY data_contabil'
-    query_datas_liquidacao = 'SELECT DISTINCT "Data liq." FROM vw_registro_liquidacoes ORDER BY "Data liq."'
+    query_datas_extrato = 'SELECT DISTINCT data_contabil FROM public.db_extratos ORDER BY data_contabil'
+    query_datas_liquidacao = 'SELECT DISTINCT "Data liq." FROM public.vw_registro_liquidacoes ORDER BY "Data liq."'
 
     df_datas_extrato = pd.read_sql(query_datas_extrato, _engine)
     df_datas_extrato['data_contabil'] = pd.to_datetime(df_datas_extrato['data_contabil']).dt.date
@@ -42,7 +86,7 @@ def carregar_filtro(_engine, trigger_atualizacao):
     df_datas_liquidacao['Data liq.'] = pd.to_datetime(df_datas_liquidacao['Data liq.']).dt.date
 
     # carregando as empresas
-    query_empresas = 'SELECT DISTINCT nome_empresa FROM db_extratos'
+    query_empresas = 'SELECT DISTINCT nome_empresa FROM public.db_extratos'
     df_empreas = pd.read_sql(query_empresas, engine)
 
     # transformando em lista
@@ -66,7 +110,7 @@ def salvar_movimentacao(sistema, id_extrato, valor, data_baixa, duplicata, parce
     try:
         with engine.begin() as conn:
             query = text('''
-                INSERT INTO db_liquidacoes (id_extrato, valor, data_liquidacao, sistema, duplicata, parcela)
+                INSERT INTO public.db_liquidacoes (id_extrato, valor, data_liquidacao, sistema, duplicata, parcela)
                 VALUES (:id, :val, :dt, :sis, :dp, :par)
             ''')
             conn.execute(query, {
@@ -86,7 +130,7 @@ def deletar_movimentacao(id):
     try:
         with engine.begin() as conn:
             query = text('''
-                DELETE FROM db_liquidacoes WHERE id = :id_selecionado
+                DELETE FROM public.db_liquidacoes WHERE id = :id_selecionado
             ''')
             conn.execute(query, {
                 "id_selecionado": int(id)
@@ -401,7 +445,7 @@ def main():
 
             # importando os cadastros bancarios
             query_cadastros_bancarios = '''
-                SELECT * FROM cadastro_contas_bancarias
+                SELECT * FROM public.cadastro_contas_bancarias
             '''
 
             # considerando o nome da empresa
@@ -520,10 +564,10 @@ if __name__ == "__main__":
             ext.valor AS "Valor",
             COALESCE(liq.valor, 0) AS "Valor liq.",
             (ext.valor - COALESCE(liq.valor, 0)) AS "Saldo"
-        FROM db_extratos ext
+        FROM public.db_extratos ext
         LEFT JOIN (
             SELECT id_extrato, SUM(valor) AS valor
-            FROM db_liquidacoes
+            FROM public.db_liquidacoes
             GROUP BY id_extrato
         ) AS liq
         ON liq.id_extrato = ext.id
@@ -609,7 +653,7 @@ if __name__ == "__main__":
                             "Parc.",
                             "Valor liq.",
                             "Data log"::date
-                        FROM vw_registro_liquidacoes
+                        FROM public.vw_registro_liquidacoes
                         WHERE "ID extrato" = :id_selecionado_extrato
                     '''
 
@@ -689,7 +733,7 @@ if __name__ == "__main__":
         
         query_liquidacoes = '''
             SELECT *
-            FROM vw_registro_liquidacoes
+            FROM public.vw_registro_liquidacoes
             WHERE "Data liq." >= :data_liq_1
                 AND "Data liq." <= :data_liq_2
                 AND COALESCE("Histórico", '') ILIKE :historico

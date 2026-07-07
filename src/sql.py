@@ -14,14 +14,13 @@ def conectar_banco():
         ambiente = os.getenv('APP_ENV', 'test')
         load_dotenv(f'.env.{ambiente}')
 
-        usuario = os.getenv("DB_USER")
-        senha = os.getenv("DB_PASS")
-        host = os.getenv("DB_HOST")
-        porta = os.getenv("DB_PORT")
-        database = os.getenv("DB_NAME")
+        url_conexao = os.getenv('DATABASE_URL')
 
-        senha_tratada = urllib.parse.quote_plus(senha) #type: ignore
-        url_conexao = f'postgresql://{usuario}:{senha_tratada}@{host}:{porta}/{database}'
+        if not url_conexao:
+            raise ValueError(f'A variável DATABASE_URL não foi encontrada no arquivo .env.{ambiente}')
+
+        if url_conexao and url_conexao.startswith('postgresql://'):
+            url_conexao = url_conexao.replace('postgresql://', 'postgresql+psycopg2://', 1)
 
         engine = create_engine(url_conexao, echo=False)
 
