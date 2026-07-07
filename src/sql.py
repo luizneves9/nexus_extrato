@@ -22,6 +22,13 @@ def conectar_banco():
         if url_conexao and url_conexao.startswith('postgresql://'):
             url_conexao = url_conexao.replace('postgresql://', 'postgresql+psycopg2://', 1)
 
-        engine = create_engine(url_conexao, echo=False)
+        engine = create_engine(
+            url_conexao,
+            echo=False,
+            pool_size=5,
+            max_overflow=10,
+            pool_recycle=300,
+            pool_pre_ping=True
+        )
 
     return engine
