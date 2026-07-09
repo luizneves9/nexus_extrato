@@ -1,6 +1,5 @@
 ## Função de conexão ao banco de dados PostgreSQL
 
-import urllib.parse
 import os
 from sqlalchemy import create_engine
 from dotenv import load_dotenv

@@ -1,11 +1,7 @@
 import os
 import pandas as pd
-import numpy as np
 import hashlib
-from config import CAMINHO_EXTRATO_BANCARIO_NOVO, RENOMEAR_EXTRATO
-from loader.sql_tools import upsert_extrato
 from sql import conectar_banco
-from extractor.extractor import importar_csv
 import streamlit as st
 from sqlalchemy import text
 from datetime import date
@@ -146,7 +142,7 @@ def transformar_valor_decimal_em_str(valor):
 def transformar_valor_decimal_str_em_float(valor):
     return float(valor.replace('.', '').replace(',', '.'))
 
-@st.dialog('Liquidação Multipla', width='medium')
+@st.dialog('Liquidação Multipla', width='large')
 def modal_operacao_multipla(linha_selecionada):
 
     def excluir_registro(id_deletar):
@@ -161,7 +157,7 @@ def modal_operacao_multipla(linha_selecionada):
     st.write(f'Saldo: R$ {transformar_valor_decimal_em_str(linha_selecionada["Saldo"])}')
 
     with st.container(border=True):
-        col1, col2, col3, col4, col5, col6 = st.columns([2.5, 2, 2.9, 1.5, 1, 1])
+        col1, col2, col3, col4, col5, col6 = st.columns([1, 1, 1, 2, 2, 1])
         with col1:
             sistema_input = st.selectbox('Sistema', ['Corporativo', 'SSW', 'Delsoft', 'Diversos'])
         
@@ -172,10 +168,10 @@ def modal_operacao_multipla(linha_selecionada):
             val_input = st.number_input('Valor', step=0.01, value=linha_selecionada['Saldo'])
 
         with col4:
-            dp_input = st.text_input('DP')
+            dp_input = st.text_input('DP/Histórico')
             
         with col5:
-            parc_input = st.text_input('Parc.', value='')
+            parc_input = st.text_input('Parc./Complemento', value='')
 
         with col6:
             st.write('##')
@@ -361,107 +357,7 @@ def detalhar_lancamentos(dados, linha_selecionada):
 
     st.dataframe(dados, hide_index=True)
 
-def main():
-
-    ## IMPORTANDO OS DADOS DO SISTEMA ATLAS
-
-    # gerando a engine
-    engine = conectar_banco()
-
-    # listando os arquivos disponíveis na pasta para importação
-    arquivos_atlas = [
-        os.path.join(CAMINHO_EXTRATO_BANCARIO_NOVO, f) for f in os.listdir(CAMINHO_EXTRATO_BANCARIO_NOVO)
-        if not f.startswith('~') and f.endswith('.csv')
-    ]
-
-    # processando cada arquivo dentro da lista
-    for arquivo in arquivos_atlas:
-
-        df = None
-
-        # carregando o nome do arquivo
-        nome_arquivo = os.path.basename(arquivo)
-
-        # procesando e tratando os dados
-        try:
-            # processando o arquivo
-            df = importar_csv(arquivo)
-
-            # validando se o df está vazio
-            if df is None or df.empty:
-                continue
-
-            # filtrando os dados
-            df = df[df['Unnamed: 18'].notna()]
-            df.columns = df.iloc[0]
-            df = df.iloc[1:]
-
-            df = df[df['Valor'] != 'Valor']
-
-            colunas_valor = ['Valor']
-            for col in colunas_valor:
-                df[col] = (df[col].astype(str)
-                                    .str.replace(r'[R\$\s\xa0]', '', regex=True)
-                                    .str.replace('.', '', regex=False)
-                                    .str.replace(',', '.', regex=False)
-                                    .astype(float))
-
-            # negativando os valores de débito
-            df['Valor'] = np.where(df['Tipo'].str.lower() == 'debito', df['Valor'] * -1, df['Valor'])
-            
-            # filtrando as colunas essenciais
-            df = df[['Banco', 'Ag./Conta', 'Data Contábil', 'Código Categoria', 'Descrição Categoria', 'Cód. Hist.', 'Descrição Histórico', 'Documento', 'Complemento', 'Natureza', 'Tipo', 'Valor', 'Status']]
-
-            df = df[df['Ag./Conta'] != 'Ag.: 4018-0 Cc: 89394-3']
-
-            df.reset_index()
-
-            # criando o hash
-            df['hash'] = df.apply(gerar_id_numerico, axis=1)
-
-            # criando o sequencial
-            df = df.sort_values(by=['Data Contábil'])
-            df['seq'] = (df.groupby(df['hash']).cumcount() + 1).astype(str).str.zfill(5)
-
-            # criando o id
-            df['id_transacao'] = df['hash'] + df['seq']
-
-            # excluindo colunas
-            df.drop(columns=['hash', 'seq'], inplace=True)
-
-            # renomeando colunas
-            df.rename(columns=RENOMEAR_EXTRATO, inplace=True)
-
-            # tratando os dados de data
-            df['data_contabil'] = pd.to_datetime(df['data_contabil'], dayfirst=True, errors='coerce')
-
-            # tratando os dados de string
-            colunas_string = ['banco', 'agencia_conta', 'codigo_categoria', 'descricao_categoria', 'cod_hist',
-                              'descricao_historico', 'documento', 'complemento', 'natureza', 'tipo', 'status',
-                              'id_transacao']
-
-            for col in colunas_string:
-                df[col] = df[col].astype(str)
-
-            # importando os cadastros bancarios
-            query_cadastros_bancarios = '''
-                SELECT * FROM public.cadastro_contas_bancarias
-            '''
-
-            # considerando o nome da empresa
-            cadastros_bancarios = pd.read_sql(query_cadastros_bancarios, engine)
-
-            df = df.merge(cadastros_bancarios[['agencia_conta', 'nome_empresa']], on='agencia_conta', how='left')
-            df['nome_empresa'] = df['nome_empresa'].fillna('Desconhecido')
-
-            # upando o arquivo
-            upsert_extrato(df, engine, nome_arquivo, arquivo)
-
-        except Exception as e:
-            print(f'[-] Erro ao processar o arquivo - "{nome_arquivo}": {e}')
-
 if __name__ == "__main__":
-    main()
 
     if 'last_update' not in st.session_state:
         st.session_state.last_update = 0
@@ -476,25 +372,6 @@ if __name__ == "__main__":
     if pagina == 'Resumo':
 
         st.write('< em desenvolvimento ')
-
-        ## RETIRADO PARA ANÁLISE
-        #query_resumo = '''
-        #    SELECT
-        #        data_contabil as "Data",
-        #        SUM(CASE WHEN tipo = 'CREDITO' THEN valor ELSE 0 END) AS "Crédito",
-        #        SUM(CASE WHEN tipo = 'DEBITO' THEN valor ELSE 0 END) AS "Débito",
-        #        SUM(CASE WHEN tipo = 'CREDITO' THEN valor ELSE 0 END) + SUM(CASE WHEN tipo = 'DEBITO' THEN valor ELSE 0 END) as "Saldo do dia"
-        #    FROM db_extratos
-        #    GROUP BY
-        #        data_contabil
-        #    ORDER BY
-        #        data_contabil
-        #'''
-        #
-        #df_resumo = pd.read_sql(query_resumo, engine)
-        #df_resumo['Data'] = pd.to_datetime(df_resumo['Data']).dt.date
-        #
-        #st.dataframe(df_resumo, hide_index=True)
 
     elif pagina == 'Extrato':
 
@@ -765,6 +642,7 @@ if __name__ == "__main__":
 
         df_liquidacoes = pd.read_sql(text(query_liquidacoes), engine, params=params_liq) #type: ignore
         df_liquidacoes['Data liq.'] = pd.to_datetime(df_liquidacoes['Data liq.']).dt.tz_localize(None)
+        df_liquidacoes['Data Extrato'] = pd.to_datetime(df_liquidacoes['Data Extrato']).dt.tz_localize(None)
 
         if 'Data log' in df_liquidacoes.columns and not df_liquidacoes['Data log'].empty:
             df_liquidacoes['Data log'] = pd.to_datetime(df_liquidacoes['Data log']).dt.tz_convert('America/Sao_Paulo')
@@ -783,6 +661,7 @@ if __name__ == "__main__":
                 'Valor banco': st.column_config.NumberColumn('Valor banco', format='%.2f'),
                 'Valor liq.': st.column_config.NumberColumn('Valor liq.', format='%.2f'),
                 'Data liq.': st.column_config.DateColumn('Data liq.', format='DD/MM/YYYY'),
+                'Data Extrato': st.column_config.DateColumn('Data Extrato', format='DD/MM/YYYY'),
                 'Data log': st.column_config.DatetimeColumn('Data log', format='DD/MM/YYYY HH:mm:ss')
             },
             disabled=[c for c in df_com_selecao.columns if c!= 'Sel']
