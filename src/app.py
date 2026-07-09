@@ -157,7 +157,7 @@ def modal_operacao_multipla(linha_selecionada):
     st.write(f'Saldo: R$ {transformar_valor_decimal_em_str(linha_selecionada["Saldo"])}')
 
     with st.container(border=True):
-        col1, col2, col3, col4, col5, col6 = st.columns([1, 1, 1, 2, 2, 1])
+        col1, col2, col3, col4, col5, col6 = st.columns([1, 1, 1.2, 2, 2, 1])
         with col1:
             sistema_input = st.selectbox('Sistema', ['Corporativo', 'SSW', 'Delsoft', 'Diversos'])
         
