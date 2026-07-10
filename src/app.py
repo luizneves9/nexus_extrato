@@ -33,8 +33,8 @@ engine = conectar_banco()
 
 def main():
 
-    pagina_extrato = st.Page('pages/extrato_bancario.py', title='Extrato Bancário', default=True)
-    pagina_liquidacoes = st.Page('pages/extrato_liquidacoes.py', title='Liquidações')
+    pagina_extrato = st.Page('view/extrato_bancario.py', title='Extrato Bancário', default=True)
+    pagina_liquidacoes = st.Page('view/extrato_liquidacoes.py', title='Liquidações')
 
     pages = {
         'Menu:': [
