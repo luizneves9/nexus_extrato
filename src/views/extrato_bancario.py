@@ -218,6 +218,7 @@ def modal_operacao_multipla(linha_selecionada):
                             st.session_state.last_update += 1
                             st.rerun()
 
+@st.dialog('Lançamentos', width='medium')
 def detalhar_lancamentos(dados, linha_selecionada):
     
     st.markdown(f'## Registro bancário: {linha_selecionada['Empresa'].title()}')
