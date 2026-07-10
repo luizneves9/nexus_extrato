@@ -31,8 +31,6 @@ warnings.filterwarnings('ignore', category=DeprecationWarning)
 # conectando engine
 engine = conectar_banco()
 
-
-
 def main():
 
     pagina_extrato = st.Page('pages/extrato_bancario.py', title='Extrato Bancário', default=True)
