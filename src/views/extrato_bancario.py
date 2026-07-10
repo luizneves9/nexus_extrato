@@ -34,9 +34,6 @@ def carregar_filtro(_engine, trigger_atualizacao):
 def transformar_valor_decimal_em_str(valor):
     return f'{valor:,.2f}'.replace(',', 'v').replace('.', ',').replace('v', '.')
 
-def transformar_valor_decimal_em_str(valor):
-    return f'{valor:,.2f}'.replace(',', 'v').replace('.', ',').replace('v', '.')
-
 def transformar_valor_decimal_str_em_float(valor):
     return float(valor.replace('.', '').replace(',', '.'))
 
@@ -314,6 +311,7 @@ def main():
     busca_banco = f'%{st.session_state.banco_selecionado}%'
     busca_agencia = f'%{st.session_state.agencia_selecionado}%'
     busca_id = f'%{st.session_state.id_selecionado}%'
+
     params = {'data_1': st.session_state.data_selecionada_1,
                 'data_2': st.session_state.data_selecionada_2,
                 'historico': busca_historico,
