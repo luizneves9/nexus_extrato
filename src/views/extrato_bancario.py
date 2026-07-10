@@ -249,6 +249,55 @@ def detalhar_lancamentos(dados, linha_selecionada):
 
     st.dataframe(dados, hide_index=True)
 
+def update_tipo(id, tipo):
+    try:
+        with engine.begin() as conn:
+            query = text('''
+                UPDATE public.db_extratos
+                SET tipo = :tipo_novo
+                WHERE id = :id_selecionado
+            ''')
+            conn.execute(query, {
+                "id_selecionado": int(id),
+                "tipo_novo": str(tipo)
+            })
+            return True
+    except Exception as e:
+        st.error(f'Erro ao salvar no banco: {e}')
+        return False
+
+@st.dialog('Manutenção de Registro')
+def modal_manutencao(linha_selecionada):
+
+    st.write('')
+
+    lista_tipos = ['CREDITO', 'DEBITO', 'ECONTAS', 'TRANSFERENCIA', 'RESGATE', 'APLICACAO']
+
+    try:
+        indice = lista_tipos.index(linha_selecionada['Tipo'])
+    except:
+        indice = 0
+
+    selecao_tipo = st.selectbox('Tipo:', options=lista_tipos, index=indice)
+
+    col_vazia, col_btn = st.columns([1, 1])
+
+    with col_btn:
+        if st.button('Confirmar', width='stretch', type='primary'):
+            sucesso = update_tipo(
+                id=linha_selecionada['id'],
+                tipo=selecao_tipo
+            )
+
+            if sucesso:
+                st.success('Alteração registrada!')
+                st.session_state.last_update += 1
+                st.rerun()
+
+    with col_vazia:
+        if st.button('Cancelar', width='stretch'):
+            st.rerun()
+
 def main():
 
     if 'last_update' not in st.session_state:
@@ -403,37 +452,38 @@ def main():
                         st.session_state.temp_baixas = []
                         modal_operacao_multipla(linha)
 
-                detalhar = st.button(f'Detalhar Lançamentos', type='primary')
+                if st.button(f'Detalhar', type='primary'):
 
-            if detalhar:
+                    for col in colunas_valor:
+                                linha[col] = transformar_valor_decimal_str_em_float(linha[col])
 
-                for col in colunas_valor:
-                            linha[col] = transformar_valor_decimal_str_em_float(linha[col])
+                    id_selecionado = str(linha['id'])
 
-                id_selecionado = str(linha['id'])
+                    params_lanc = {'id_selecionado_extrato': id_selecionado}
 
-                params_lanc = {'id_selecionado_extrato': id_selecionado}
+                    query_liquidacoes = '''
+                        SELECT 
+                            "ID",
+                            "Data liq.",
+                            "Sistema",
+                            "DP",
+                            "Parc.",
+                            "Valor liq.",
+                            "Data log"::date
+                        FROM public.vw_registro_liquidacoes
+                        WHERE "ID extrato" = :id_selecionado_extrato
+                    '''
 
-                query_liquidacoes = '''
-                    SELECT 
-                        "ID",
-                        "Data liq.",
-                        "Sistema",
-                        "DP",
-                        "Parc.",
-                        "Valor liq.",
-                        "Data log"::date
-                    FROM public.vw_registro_liquidacoes
-                    WHERE "ID extrato" = :id_selecionado_extrato
-                '''
+                    df_lancamentos = pd.read_sql(text(query_liquidacoes), engine, params=params_lanc)
+                    
+                    #st.title('Lançamentos:')
+                    if df_lancamentos.empty:
+                        st.markdown('<span style="color:red">Sem registros!</span>', unsafe_allow_html=True)
+                    else:
+                        detalhar_lancamentos(df_lancamentos, linha)
 
-                df_lancamentos = pd.read_sql(text(query_liquidacoes), engine, params=params_lanc)
-                
-                #st.title('Lançamentos:')
-                if df_lancamentos.empty:
-                    st.markdown('<span style="color:red">Sem registros!</span>', unsafe_allow_html=True)
-                else:
-                    detalhar_lancamentos(df_lancamentos, linha)
+                if st.button('Manutenção', type='primary'):
+                    modal_manutencao(linha)
 
     else:
         st.caption('Selecione um registro acima para habilitar as opções de liquidação.')
