@@ -11,3 +11,4 @@ src/__pycache__
 src/extractor/__pycache__
 src/loader/__pycache__
 src/transformer/__pycache__
+src/security/__pycache__
