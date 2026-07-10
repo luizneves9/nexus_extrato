@@ -21,5 +21,8 @@ def verificar_acesso_ip():
 
     if not ip_usuario or ip_usuario in ['127.0.0.1', 'localhost']:
         return True
+    
+    if "," in ip_usuario:
+        ip_usuario = ip_usuario.split(",")[0].strip()
 
     return ip_usuario in lista_ips_autorizados
