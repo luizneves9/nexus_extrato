@@ -304,7 +304,7 @@ def modal_manutencao(linha_selecionada):
             st.rerun()
 
 @st.dialog('Excluir Registro')
-def excluir_registro(linha):
+def excluir_registro(linha, senha):
 
     st.markdown('*Atenção: A exclusão deste registro não poderá ser revertida!*')
 
@@ -323,17 +323,31 @@ def excluir_registro(linha):
     with col8: st.text_input('Valor', value=linha['Valor'], disabled=True)
 
     if linha['Valor liq.'] != '0,00':
+        st.divider()
         st.error('Erro: O registro possui valor liquidado!')
+
     else:
-        with st.container(horizontal=True):
+        col1, col2, col3 = st.columns([3, 1.5, 1.5], vertical_alignment='bottom')
+
+        with col1: 
+            senha_digitada = st.text_input('Senha:', type='password')
+
+        with col2:
             if st.button('Confirmar'):
                 
-                with engine.begin() as conn:
-                    query = text('DELETE FROM public.db_extratos WHERE "id" = :id_linha')
-                    conn.execute(query, {'id_linha': int(linha['id'])})
-                    st.toast(f'Sistema: Registro de ID {linha["id"]} no valor de {linha["Valor"]} foi excluído com sucesso!', icon='✅')
-                    #st.rerun()
+                if senha_digitada == senha:
+                    with engine.begin() as conn:
+                        try:
+                            query = text('DELETE FROM public.db_extratos WHERE "id" = :id_linha')
+                            conn.execute(query, {'id_linha': int(linha['id'])})
+                        except Exception as e:
+                            st.toast(f'Sistema: Erro ao deletar registro -> {e}', icon='❌')
 
+                        st.rerun()
+                else:
+                    st.toast('Senha inválida!', icon='❌')
+
+        with col3: 
             if st.button('Cancelar'): st.rerun()
 
 def main():
@@ -523,10 +537,9 @@ def main():
                 if st.button('Manutenção', type='primary'):
                     modal_manutencao(linha)
 
-                if st.button('Excluir', type='primary'):
+                if st.button('Excluir', type='secondary'):
                     senha_excluir = 'gbs3299'
-
-                    excluir_registro(linha)
+                    excluir_registro(linha, senha_excluir)
 
     else:
         st.caption('Selecione um registro acima para habilitar as opções de liquidação.')
