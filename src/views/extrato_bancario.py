@@ -336,14 +336,25 @@ def excluir_registro(linha, senha):
             if st.button('Confirmar'):
                 
                 if senha_digitada == senha:
+                    sucesso = False
+
                     with engine.begin() as conn:
                         try:
-                            query = text('DELETE FROM public.db_extratos WHERE "id" = :id_linha')
-                            conn.execute(query, {'id_linha': int(linha['id'])})
+                            query = text('DELETE FROM public.db_extratos WHERE id = :id_linha')
+                            result = conn.execute(query, {'id_linha': int(linha['id'])})
+
+                            if result.rowcount > 0:
+                                sucesso = True
+                            else:
+                                st.toast('Sistema: Nenhum registro encontrado com esse ID.', icon='⚠️')
+
                         except Exception as e:
                             st.toast(f'Sistema: Erro ao deletar registro -> {e}', icon='❌')
 
+                    if sucesso:
+                        st.toast(f'Registro excluído com sucesso! ID: {linha['id']}', icon='✅')
                         st.rerun()
+               
                 else:
                     st.toast('Senha inválida!', icon='❌')
 
