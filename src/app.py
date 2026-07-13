@@ -35,11 +35,15 @@ def main():
 
     pagina_extrato = st.Page('views/extrato_bancario.py', title='Extrato Bancário', default=True)
     pagina_liquidacoes = st.Page('views/extrato_liquidacoes.py', title='Liquidações')
+    pagina_resumo = st.Page('views/resumo_bancario.py', title='Diário')
 
     pages = {
-        'Menu:': [
+        'Conta Corrente:': [
             pagina_extrato,
             pagina_liquidacoes
+        ],
+        'Resumo Bancário': [
+            pagina_resumo
         ]
     }
 
