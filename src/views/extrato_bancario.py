@@ -123,7 +123,7 @@ def modal_operacao_multipla(linha_selecionada):
                 c5.write(item['Parc.'])
                 c6.button('-', key=f'btn_del_{item["_id"]}', on_click=excluir_registro, args=(item['_id'],))
 
-    baixa_acumulada = sum(item['Valor'] for item in st.session_state.temp_baixas)
+    baixa_acumulada = round(sum(item['Valor'] for item in st.session_state.temp_baixas), 2)
 
     if linha_selecionada['Saldo'] > 0:
         if baixa_acumulada > linha_selecionada['Saldo']:
@@ -147,7 +147,7 @@ def modal_operacao_multipla(linha_selecionada):
     with col_btn:
         if st.button('Confirmar', width='stretch'):
 
-            saldo_disponivel = float(linha_selecionada['Saldo'])
+            saldo_disponivel = round(float(linha_selecionada['Saldo']), 2)
 
             if  saldo_disponivel >= 0 and baixa_acumulada > saldo_disponivel:
                 st.error(f'Operação negada! O valor acumulado ({transformar_valor_decimal_em_str(baixa_acumulada)}) é maior que o saldo disponível ({transformar_valor_decimal_em_str(linha_selecionada["Saldo"])}).')
@@ -292,11 +292,49 @@ def modal_manutencao(linha_selecionada):
             if sucesso:
                 st.success('Alteração registrada!')
                 st.session_state.last_update += 1
+
+                with engine.begin() as conn:    
+                    query = text('REFRESH MATERIALIZED VIEW public.mv_fluxo_caixa_diario')
+                    conn.execute(query)     
+
                 st.rerun()
 
     with col_vazia:
         if st.button('Cancelar', width='stretch'):
             st.rerun()
+
+@st.dialog('Excluir Registro')
+def excluir_registro(linha):
+
+    st.markdown('*Atenção: A exclusão deste registro não poderá ser revertida!*')
+
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col1: st.text_input('Id:', value=linha['id'], disabled=True)
+    with col2: st.text_input('Empresa:', value=linha['Empresa'], disabled=True)
+    with col3: st.text_input('Data', value=linha['Data'], disabled=True)
+
+    col4, col5, col6 = st.columns([1, 3, 3])
+    with col4: st.text_input('Banco', value=linha['Banco'], disabled=True)
+    with col5: st.text_input('Conta', value=linha['Agência/Conta'], disabled=True)
+    with col6: st.text_input('Histórico', value=linha['Desc. do Hist.'], disabled=True)
+
+    col7, col8 = st.columns([1, 1])
+    with col7: st.text_input('Tipo', value=linha['Tipo'], disabled=True)
+    with col8: st.text_input('Valor', value=linha['Valor'], disabled=True)
+
+    if linha['Valor liq.'] != '0,00':
+        st.error('Erro: O registro possui valor liquidado!')
+    else:
+        with st.container(horizontal=True):
+            if st.button('Confirmar'):
+                
+                with engine.begin() as conn:
+                    query = text('DELETE FROM public.db_extratos WHERE "id" = :id_linha')
+                    conn.execute(query, {'id_linha': int(linha['id'])})
+                    st.toast(f'Sistema: Registro de ID {linha["id"]} no valor de {linha["Valor"]} foi excluído com sucesso!', icon='✅')
+                    #st.rerun()
+
+            if st.button('Cancelar'): st.rerun()
 
 def main():
 
@@ -484,6 +522,11 @@ def main():
 
                 if st.button('Manutenção', type='primary'):
                     modal_manutencao(linha)
+
+                if st.button('Excluir', type='primary'):
+                    senha_excluir = 'gbs3299'
+
+                    excluir_registro(linha)
 
     else:
         st.caption('Selecione um registro acima para habilitar as opções de liquidação.')
