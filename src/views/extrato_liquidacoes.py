@@ -61,7 +61,7 @@ def modal_estorno_liquidacao(linha_selecionada):
             )
 
             if sucesso:
-                st.success('Liquidação registrada!')
+                st.success('Estorno realizado!')
                 st.session_state.last_update += 1
                 st.rerun()
 
