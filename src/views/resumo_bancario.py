@@ -60,4 +60,17 @@ query_resumo += ' AND nome_empresa ILIKE :empresa'
 
 df = pd.read_sql(text(query_resumo), engine, params=parametros)
 
-st.dataframe(df, hide_index=True)
+st.dataframe(
+    df,
+    hide_index=True,
+    column_config={
+        'Crédito': st.column_config.NumberColumn('Crédito', format='%.2f'),
+        'Saldo': st.column_config.NumberColumn('Saldo', format='%.2f'),
+        'Débito': st.column_config.NumberColumn('Débito', format='%.2f'),
+        'Encontro de Contas': st.column_config.NumberColumn('Encontro de Contas', format='%.2f'),
+        'Transferência': st.column_config.NumberColumn('Transferência', format='%.2f'),
+        'Resgate': st.column_config.NumberColumn('Resgate', format='%.2f'),
+        'Aplicação': st.column_config.NumberColumn('Aplicação', format='%.2f'),
+        'Mov. do dia': st.column_config.NumberColumn('Mov. do dia', format='%.2f'),
+    }
+)
