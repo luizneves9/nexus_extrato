@@ -1,15 +1,10 @@
-import pandas as pd
 import streamlit as st
-from sqlalchemy import text
-from sql import conectar_banco
 from datetime import date
-from queries.rb_select import query_resumo
+from services.resumo_bancario import obter_dados_resumo
 
 # =========================================================================
-# CONFIGURAÇÕES INICIAIS
+# INICIALIZANDO O SESSION_STATE
 # =========================================================================
-
-engine = conectar_banco()
 
 if 'input_empresa' not in st.session_state: st.session_state.input_empresa = ''
 if 'input_data' not in st.session_state: st.session_state.input_data = date.today()
@@ -42,23 +37,10 @@ with st.sidebar:
             st.rerun()
 
 # =========================================================================
-# MONTAGEM DE PARÂMETROS
+# VISUALIZAÇÃO DOS DADOS
 # =========================================================================
 
-busca_empresa = f'%{st.session_state.input_empresa}%'
-
-parametros = {
-    'data': st.session_state.input_data,
-    'empresa': busca_empresa
-}
-
-query_resumo += ' AND nome_empresa ILIKE :empresa'
-
-# =========================================================================
-# VISUALIZAÇÃO
-# =========================================================================
-
-df = pd.read_sql(text(query_resumo), engine, params=parametros)
+df = obter_dados_resumo(st.session_state.input_data, st.session_state.input_empresa)
 
 st.dataframe(
     df,
