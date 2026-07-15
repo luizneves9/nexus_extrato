@@ -602,7 +602,7 @@ def main():
         AND (
             CASE
                 WHEN :valor = 0 THEN TRUE
-                ELSE ext.valor = :valor
+                ELSE ABS(ext.valor) = ABS(:valor)
             END
         )
     '''

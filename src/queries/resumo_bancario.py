@@ -1,4 +1,4 @@
-query_resumo = '''
+QUERY_RESUMO = '''
     WITH ranking_fluxo AS (
         SELECT
             *,
@@ -23,5 +23,6 @@ query_resumo = '''
         "Mov. do dia",
         "Saldo"
     FROM ranking_fluxo
-    WHERE rn = 1
+    WHERE rn = 1 AND nome_empresa ILIKE :empresa
 '''
+
