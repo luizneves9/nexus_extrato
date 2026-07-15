@@ -3,8 +3,8 @@ import pandas as pd
 from datetime import date
 from sqlalchemy import text
 from sql import engine
-from utils.formatadores import transformar_valor_decimal_em_str
 from services.extrato_liquidacoes import carregar_empresas, estornar_liquidacao
+from queries.extrato_liquidacoes import SELECT_LIQUIDACOES
 
 # ====================================================================================================
 # SESSÃO DE DIALOG DO STREAMLIT
@@ -145,29 +145,7 @@ def main():
                     'agencia': busca_agencia,
                     'dp': busca_dp}
 
-    query_liquidacoes = '''
-        SELECT *
-        FROM public.vw_registro_liquidacoes
-        WHERE "Data liq." >= :data_liq_1
-            AND "Data liq." <= :data_liq_2
-            AND COALESCE("Histórico", '') ILIKE :historico
-            AND COALESCE("Sistema", '') ILIKE :sistema
-            AND COALESCE("Banco", '') ILIKE :banco
-            AND COALESCE("Agência/conta", '') ILIKE :agencia
-            AND COALESCE("DP", '') ILIKE :dp
-            AND (
-                CASE
-                    WHEN :valor_banco = 0 THEN TRUE
-                    ELSE "Valor banco" = :valor_banco
-                END
-            )
-            AND (
-                CASE
-                    WHEN :valor_liq = 0 THEN TRUE
-                    ELSE "Valor liq." = :valor_liq
-                END
-            )
-    '''
+    query_liquidacoes = SELECT_LIQUIDACOES
 
     if st.session_state.input_empresa != 'GRUPO':
         query_liquidacoes += ' AND "Empresa" = :empresa'
