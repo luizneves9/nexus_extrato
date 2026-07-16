@@ -44,6 +44,7 @@ QUERY_RESUMO_APLICACAO = '''
         agencia_conta AS "Ag. e Cc",
         "Resgate",
         "Aplicação",
+        "Rendimento",
         "Mov. do dia",
         "Saldo"
     FROM ranking_fluxo

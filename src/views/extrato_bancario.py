@@ -271,7 +271,7 @@ def modal_manutencao(linha_selecionada):
 
     st.write('')
 
-    lista_tipos = ['CREDITO', 'DEBITO', 'ECONTAS', 'TRANSFERENCIA', 'RESGATE', 'APLICACAO']
+    lista_tipos = ['CREDITO', 'DEBITO', 'ECONTAS', 'TRANSFERENCIA', 'RESGATE', 'APLICACAO', 'RENDIMENTO']
 
     try:
         indice = lista_tipos.index(linha_selecionada['Tipo'])
@@ -294,7 +294,12 @@ def modal_manutencao(linha_selecionada):
                 st.session_state.last_update += 1
 
                 with engine.begin() as conn:    
-                    query = text('REFRESH MATERIALIZED VIEW public.mv_fluxo_caixa_diario')
+                    query = text('''
+                        BEGIN;
+                        REFRESH MATERIALIZED VIEW mv_fluxo_aplicacao_diario;
+                        REFRESH MATERIALIZED VIEW mv_fluxo_caixa_diario;
+                        COMMIT;
+                    ''')
                     conn.execute(query)     
 
                 st.rerun()
@@ -354,7 +359,12 @@ def excluir_registro(linha, senha):
                     if sucesso:
                         st.toast(f'Registro excluído com sucesso! ID: {linha['id']}', icon='✅')
                         with engine.begin() as conn:    
-                            query = text('REFRESH MATERIALIZED VIEW public.mv_fluxo_caixa_diario')
+                            query = text('''
+                                BEGIN;
+                                REFRESH MATERIALIZED VIEW mv_fluxo_aplicacao_diario;
+                                REFRESH MATERIALIZED VIEW mv_fluxo_caixa_diario;
+                                COMMIT;
+                            ''')
                             conn.execute(query)   
                         st.rerun()
                
@@ -451,7 +461,7 @@ def modal_lancamento():
 
     col6, col7, col8 = st.columns([1, 2, 2])
     with col6: input_complemento = st.text_input('Comp.', value='Manual', disabled=True)
-    with col7: input_tipo = st.selectbox('Tipo:', ['CREDITO', 'DEBITO', 'ECONTAS', 'TRANSFERENCIA', 'RESGATE', 'APLICACAO'])
+    with col7: input_tipo = st.selectbox('Tipo:', ['CREDITO', 'DEBITO', 'ECONTAS', 'TRANSFERENCIA', 'RESGATE', 'APLICACAO', 'RENDIMENTO'])
     with col8: input_valor = st.number_input('Valor', value=0.00, key='input_valor')
 
     st.write('')
@@ -488,17 +498,18 @@ def modal_lancamento():
                 if sucesso:
 
                     with engine.begin() as conn:    
-                        query = text('REFRESH MATERIALIZED VIEW public.mv_fluxo_caixa_diario')
+                        query = text('''
+                            BEGIN;
+                                REFRESH MATERIALIZED VIEW mv_fluxo_aplicacao_diario;
+                                REFRESH MATERIALIZED VIEW mv_fluxo_caixa_diario;
+                                COMMIT;
+                        ''')
                         conn.execute(query)   
 
                     st.rerun()
                     
         if st.button('Cancelar'):
             st.rerun()
-
-#INSERT INTO db_extratos (banco, agencia_conta, data_contabil, codigo_categoria, descricao_categoria, cod_hist, descricao_historico, documento, complemento, natureza, tipo, valor, status, nome_empresa)
-#VALUES
-#	(:banco, :agencia_conta, :data, 0, '', '', :historico, '0', 'Lcto Manual', 'DPV', :tipo_lcto, :valor, 'NC', :empresa)
 
 def main():
 
