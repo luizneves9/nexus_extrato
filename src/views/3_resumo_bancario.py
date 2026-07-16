@@ -121,11 +121,13 @@ st.markdown(
 
 soma_resgate_invest = df_aplicacao.loc[df['Data'] == st.session_state.resumo_bancario_input_data, 'Resgate'].sum()
 soma_aplicacao_invest = df_aplicacao.loc[df['Data'] == st.session_state.resumo_bancario_input_data, 'Aplicação'].sum()
+soma_rendimento_invest = df_aplicacao.loc[df['Data'] == st.session_state.resumo_bancario_input_data, 'Rendimento'].sum()
 soma_saldo_invest = df_aplicacao.loc[df['Data'] == st.session_state.resumo_bancario_input_data, 'Saldo'].sum()
 
 with st.container(horizontal=True):
     st.metric('Resgate', f'R$ {soma_resgate_invest:,.2f}'.replace(',', 'v').replace('.', ',').replace('v', '.'))
     st.metric('Aplicação', f'R$ {soma_aplicacao_invest:,.2f}'.replace(',', 'v').replace('.', ',').replace('v', '.'))
+    st.metric('Rendimento', f'R$ {soma_rendimento_invest:,.2f}'.replace(',', 'v').replace('.', ',').replace('v', '.'))
     st.metric('Saldo', f'R$ {soma_saldo_invest:,.2f}'.replace(',', 'v').replace('.', ',').replace('v', '.'))
 
 st.dataframe(
@@ -134,6 +136,7 @@ st.dataframe(
     column_config={
         'Resgate': st.column_config.NumberColumn('Resgate', format='%.2f'),
         'Aplicação': st.column_config.NumberColumn('Aplicação', format='%.2f'),
+        'Rendimento': st.column_config.NumberColumn('Rendimento', format='%.2f'),
         'Mov. do dia': st.column_config.NumberColumn('Mov. do dia', format='%.2f'),
     }
 )
