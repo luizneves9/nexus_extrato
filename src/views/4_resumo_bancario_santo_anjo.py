@@ -14,8 +14,14 @@ def main():
     # VISUALIZAÇÃO FRONT
     # ====================================================================================================
 
+    def transformar_valor_decimal_em_str(valor):
+        return f'{valor:,.2f}'.replace(',', 'v').replace('.', ',').replace('v', '.')
 
     df_extrato_santo_anjo = pd.read_sql(SELECT_EXTRATO_SANTO_ANJO, engine)
+
+    colunas_valor = ['vlr_anjo', 'vlr_desconhecido', 'vlr_bsr']
+    for col in colunas_valor:
+        df_extrato_santo_anjo[col] = df_extrato_santo_anjo[col].map(transformar_valor_decimal_em_str)
 
     st.data_editor(
         df_extrato_santo_anjo,
@@ -23,9 +29,6 @@ def main():
         width='stretch',
         column_config={
             'id': st.column_config.NumberColumn('ID', format='%d'),
-            'vlr_anjo': st.column_config.NumberColumn('Vlr Anjo', format='%.2f'),
-            'vlr_desconhecido': st.column_config.NumberColumn('Vlr Desc.', format='%.2f'),
-            'vlr_bsr': st.column_config.NumberColumn('Vlr Bsr', format='%.2f'),
             'data_contabil': st.column_config.DateColumn('Data Extrato', format='DD/MM/YYYY'),
         },
     )
