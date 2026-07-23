@@ -36,6 +36,7 @@ def main():
     pagina_extrato = st.Page('views/extrato_bancario.py', title='Extrato Bancário', default=True)
     pagina_liquidacoes = st.Page('views/2_extrato_liquidacoes.py', title='Liquidações')    
     pagina_resumo = st.Page('views/3_resumo_bancario.py', title='Diário')
+    pagina_santo_anjo = st.Page('views/4_resumo_bancario_santo_anjo.py', title='Extrato - Santo Anjo')
 
     pages = {
         'Conta Corrente:': [
@@ -44,6 +45,9 @@ def main():
         ],
         'Resumo Bancário': [
             pagina_resumo
+        ],
+        'Personalizado:': [
+            pagina_santo_anjo
         ]
     }
 
