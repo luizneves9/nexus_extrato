@@ -171,6 +171,7 @@ def modal_operacao_multipla(linha_selecionada):
                         )
 
                     st.session_state.last_update += 1
+                    st.session_state['mensagem_sucesso'] = 'Sistema: Liquidação realizada com sucesso!'
                     st.rerun()
 
                 else:
@@ -290,7 +291,6 @@ def modal_manutencao(linha_selecionada):
             )
 
             if sucesso:
-                st.toast('Sistema: Alteração registrada!', icon='✅')
                 st.session_state.last_update += 1
 
                 with engine.begin() as conn:    
@@ -302,6 +302,7 @@ def modal_manutencao(linha_selecionada):
                     ''')
                     conn.execute(query)     
 
+                st.session_state['mensagem_sucesso'] = 'Sistema: Alteração registrada!'
                 st.rerun()
 
     with col_vazia:
@@ -357,7 +358,6 @@ def excluir_registro(linha, senha):
                             st.toast(f'Sistema: Erro ao deletar registro -> {e}', icon='❌')
 
                     if sucesso:
-                        st.toast(f'Registro excluído com sucesso! ID: {linha['id']}', icon='✅')
                         with engine.begin() as conn:    
                             query = text('''
                                 BEGIN;
@@ -366,6 +366,7 @@ def excluir_registro(linha, senha):
                                 COMMIT;
                             ''')
                             conn.execute(query)   
+                        st.session_state['mensagem_sucesso'] = f'Registro excluído com sucesso! ID: {linha['id']}'
                         st.rerun()
                
                 else:
@@ -462,7 +463,7 @@ def modal_lancamento():
     col6, col7, col8 = st.columns([1, 2, 2])
     with col6: input_complemento = st.text_input('Comp.', value='Manual', disabled=True)
     with col7: input_tipo = st.selectbox('Tipo:', ['CREDITO', 'DEBITO', 'ECONTAS', 'TRANSFERENCIA', 'RESGATE', 'APLICACAO', 'RENDIMENTO'])
-    with col8: input_valor = st.number_input('Valor', value=0.00, key='input_valor')
+    with col8: input_valor = st.number_input('Valor', key='input_valor')
 
     st.write('')
 
@@ -491,7 +492,7 @@ def modal_lancamento():
                             'empresa': input_empresa
                         })
                         sucesso = True
-                        st.toast('Sistema: Lançamento realizado com sucesso!', icon='✅')
+
                 except ValueError:
                     st.toast('Sistema: Erro ao salvar o lançamento!', icon='❌')
 
@@ -506,6 +507,7 @@ def modal_lancamento():
                         ''')
                         conn.execute(query)   
 
+                    st.session_state['mensagem_sucesso'] = 'Sistema: Lançamento realizado com sucesso!'
                     st.rerun()
                     
         if st.button('Cancelar'):
@@ -727,6 +729,9 @@ def main():
             else:
                 senha_excluir = 'gbs3299'
                 excluir_registro(linha, senha_excluir)
+
+        if 'mensagem_sucesso' in st.session_state:
+            st.toast(st.session_state.pop('mensagem_sucesso'), icon='✅')
 
 if __name__ == '__main__':
     main()

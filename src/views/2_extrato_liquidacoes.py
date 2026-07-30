@@ -50,9 +50,9 @@ def modal_estorno_liquidacao(linha_selecionada):
             sucesso = estornar_liquidacao(
                 id=linha_selecionada['ID']
             )
-            st.toast('Sistema: Estorno realizado com sucesso!', icon='✅')
 
             if sucesso:
+                st.session_state['mensagem_sucesso'] = 'Sistema: Estorno realizado com sucesso!'
                 st.rerun()
 
     with col02:
@@ -99,11 +99,17 @@ def main():
             """
         )
 
+        # identificando o index da empresa na lista
+        try:
+            idx_empresa = lista_empresas.index(st.session_state.input_empresa)
+        except (ValueError, KeyError, AttributeError):
+            idx_empresa = 0
+
         # formulario de filtros
         with st.form(key='filtro_form_liquidacao'):
             input_data_1 = st.date_input('Data inicio:', value=st.session_state.input_data_1, format='DD/MM/YYYY')
             input_data_2 = st.date_input('Data fim:', value=st.session_state.input_data_2, format='DD/MM/YYYY')
-            input_empresa = st.selectbox('Empresa:', lista_empresas, index=lista_empresas.index(st.session_state.input_empresa) if lista_empresas else 0)
+            input_empresa = st.selectbox('Empresa:', lista_empresas, index=idx_empresa)
             input_banco = st.text_input('Banco:', value=st.session_state.input_banco)
             input_agencia = st.text_input('Agência/conta:', value=st.session_state.input_agencia)
             input_id_extrato = st.text_input('ID do extrato:', value=st.session_state.input_id_extrato)
@@ -195,6 +201,9 @@ def main():
 
     else:
         st.caption('Selecione um registro acima para habilitar as opções de estorno.')
+
+    if 'mensagem_sucesso' in st.session_state:
+        st.toast(st.session_state.pop('mensagem_sucesso'), icon='✅')
 
 if __name__ == '__main__':
     main()
