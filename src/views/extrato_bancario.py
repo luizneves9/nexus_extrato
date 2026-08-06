@@ -3,7 +3,7 @@ import pandas as pd
 import streamlit as st
 from datetime import date
 from sqlalchemy import text
-from sql import conectar_banco
+from database.connection import conectar_banco
 
 engine = conectar_banco()
 

@@ -1,4 +1,4 @@
-from sql import conectar_banco
+from database.connection import conectar_banco
 import streamlit as st
 import warnings
 from security.ip_validator import verificar_acesso_ip
@@ -34,7 +34,7 @@ engine = conectar_banco()
 def main():
 
     pagina_extrato = st.Page('views/extrato_bancario.py', title='Extrato Bancário', default=True)
-    pagina_liquidacoes = st.Page('views/2_extrato_liquidacoes.py', title='Liquidações')    
+    pagina_liquidacoes = st.Page('views/app_liquidacoes.py', title='Liquidações')    
     pagina_resumo = st.Page('views/3_resumo_bancario.py', title='Diário')
     pagina_santo_anjo = st.Page('views/4_resumo_bancario_santo_anjo.py', title='Extrato - Santo Anjo')
 
