@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 from sqlalchemy import text
-from sql import engine
+from database.connection import engine
 from queries.resumo_bancario_santo_anjo import SELECT_EXTRATO_SANTO_ANJO
 
 # ====================================================================================================

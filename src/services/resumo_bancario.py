@@ -1,6 +1,6 @@
 import pandas as pd
 from sqlalchemy import text
-from sql import conectar_banco
+from database.connection import conectar_banco
 
 engine = conectar_banco()
 
