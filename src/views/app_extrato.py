@@ -187,12 +187,17 @@ def main():
         if st.button('Excluir', type='secondary'):
             if len(selecionados) != 1:
                 st.toast('Selecione um registro.', icon='⚠️')
+            elif linha['Valor liq.'] != '0,00':
+                st.toast('O registro possui liquidações e não pode ser excluido.', icon='⚠️')
             else:
                 senha_excluir = 'gbs3299'
                 excluir_registro(linha, senha_excluir)
 
     if 'mensagem_sucesso' in st.session_state:
         st.toast(st.session_state.pop('mensagem_sucesso'), icon='✅')
+
+    if 'mensagem_erro' in st.session_state:
+        st.toast(st.session_state.pop('mensagem_sucesso'), icon='❌')
 
 if __name__ == '__main__':
     main()

@@ -21,7 +21,7 @@ def modal_manutencao(linha_selecionada):
 
     with col_confirmar:
         if st.button('Confirmar', width='stretch', type='primary'):
-            sucesso = update_tipo(
+            update_tipo(
                 id=linha_selecionada['id'],
                 tipo=selecao_tipo
             )

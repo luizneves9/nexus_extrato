@@ -123,7 +123,7 @@ def modal_lancamento():
                         sucesso = True
 
                 except ValueError:
-                    st.toast('Sistema: Erro ao salvar o lançamento!', icon='❌')
+                    st.toast('Erro ao salvar o lançamento!', icon='❌')
 
                 if sucesso:
 
@@ -136,7 +136,7 @@ def modal_lancamento():
                         ''')
                         conn.execute(query)   
 
-                    st.session_state['mensagem_sucesso'] = 'Sistema: Lançamento realizado com sucesso!'
+                    st.session_state['mensagem_sucesso'] = 'Lançamento realizado com sucesso!'
                     st.rerun()
                     
         if st.button('Cancelar'):
