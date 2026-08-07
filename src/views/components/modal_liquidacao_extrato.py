@@ -6,7 +6,6 @@ from repositories.extratos_repositories import salvar_movimentacao
 @st.dialog('Liquidação Multipla', width='large')
 def operacao_multipla(linha_selecionada):
 
-
     # função para excluir um registro na tabela temporária
     def excluir_registro(id_deletar):
         st.session_state.temp_baixas = [

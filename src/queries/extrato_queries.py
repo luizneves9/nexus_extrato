@@ -48,3 +48,12 @@ SELECT_LIQUIDACOES_ID = '''
     FROM public.vw_registro_liquidacoes
     WHERE "ID extrato" = :id_selecionado_extrato
 '''
+
+QUERY_DELETE_EXTRATO = 'DELETE FROM public.db_extratos WHERE id = :id_linha'
+
+REFRESH_VIEWS = '''
+    BEGIN;
+    REFRESH MATERIALIZED VIEW mv_fluxo_aplicacao_diario;
+    REFRESH MATERIALIZED VIEW mv_fluxo_caixa_diario;
+    COMMIT;
+'''

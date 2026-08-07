@@ -93,3 +93,12 @@ def update_tipo(id, tipo):
             "tipo_novo": str(tipo)
         })
         return True
+
+def registrar_exclusao_extrato(query, id, conn):
+    '''Deleta um registro de extrato bancário no banco de dados.'''
+    result = conn.execute(query, {'id_linha': int(id)})
+    return result
+
+def executar_refresh_view(query):
+    with engine.begin() as conn:
+        conn.execute(query)

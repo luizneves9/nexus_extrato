@@ -1,6 +1,7 @@
 import streamlit as st
 from sqlalchemy import text
 from database.connection import conectar_banco
+from services.extrato_services import excluir_extrato, refresh_views
 
 engine = conectar_banco()
 
@@ -23,49 +24,29 @@ def excluir_registro(linha, senha):
     with col7: st.text_input('Tipo', value=linha['Tipo'], disabled=True)
     with col8: st.text_input('Valor', value=linha['Valor'], disabled=True)
 
-    if linha['Valor liq.'] != '0,00':
-        st.divider()
-        st.error('Erro: O registro possui valor liquidado!')
+    col9, col10, col11 = st.columns([3, 1.5, 1.5], vertical_alignment='bottom')
 
-    else:
-        col1, col2, col3 = st.columns([3, 1.5, 1.5], vertical_alignment='bottom')
+    with col9: 
+        senha_digitada = st.text_input('Senha:', type='password')
 
-        with col1: 
-            senha_digitada = st.text_input('Senha:', type='password')
+    with col10:
+        if st.button('Confirmar', type='primary'):
+            
+            if senha_digitada == senha:
 
-        with col2:
-            if st.button('Confirmar', type='primary'):
-                
-                if senha_digitada == senha:
-                    sucesso = False
+                sucesso = excluir_extrato(linha['id'])
 
-                    with engine.begin() as conn:
-                        try:
-                            query = text('DELETE FROM public.db_extratos WHERE id = :id_linha')
-                            result = conn.execute(query, {'id_linha': int(linha['id'])})
+                if sucesso:
+                    refresh_views()  
+                    st.session_state['mensagem_sucesso'] = f'Registro excluído com sucesso!'
+                    st.rerun()
 
-                            if result.rowcount > 0:
-                                sucesso = True
-                            else:
-                                st.toast('Sistema: Nenhum registro encontrado com esse ID.', icon='⚠️')
-
-                        except Exception as e:
-                            st.toast(f'Sistema: Erro ao deletar registro -> {e}', icon='❌')
-
-                    if sucesso:
-                        with engine.begin() as conn:    
-                            query = text('''
-                                BEGIN;
-                                REFRESH MATERIALIZED VIEW mv_fluxo_aplicacao_diario;
-                                REFRESH MATERIALIZED VIEW mv_fluxo_caixa_diario;
-                                COMMIT;
-                            ''')
-                            conn.execute(query)   
-                        st.session_state['mensagem_sucesso'] = f'Registro excluído com sucesso! ID: {linha['id']}'
-                        st.rerun()
-               
                 else:
-                    st.toast('Senha inválida!', icon='❌')
+                    st.session_state['mensagem_erro'] = f'Erro ao excluir registro!'
+                    st.rerun()
+            
+            else:
+                st.toast('Senha inválida!', icon='❌')
 
-        with col3: 
-            if st.button('Cancelar'): st.rerun()
+    with col11: 
+        if st.button('Cancelar'): st.rerun()
