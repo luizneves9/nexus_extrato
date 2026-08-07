@@ -1,7 +1,7 @@
 import streamlit as st
 from datetime import date
 from services.liquidacoes_services import obter_lista_empresas, listar_liquidacoes
-from views.components.modal_estorno import render_modal_estorno
+from views.components.modal_estorno_liquidacoes import render_modal_estorno
 from views.components.modal_filtro_liquidacoes import registrar_filtros
 
 def inicializar_state():
@@ -61,10 +61,8 @@ def render_sidebar(lista_empresas):
         with col5: input_historico = st.text_input('Histórico:', value=st.session_state.input_historico)
         with col6: input_valor_banco = st.number_input('Valor banco:', value=float(st.session_state.input_valor_banco))
         with col7: input_valor_liq = st.number_input('Valor liq.', value=float(st.session_state.input_valor_liq))
-        with col8:
-            submit_button_filtro = st.form_submit_button(label='Mais filtros', use_container_width=True)
-        with col9:
-            submit_button_liq = st.form_submit_button(label='Atualizar', use_container_width=True)
+        with col8: submit_button_filtro = st.form_submit_button(label='Mais filtros', use_container_width=True)
+        with col9: submit_button_liq = st.form_submit_button(label='Atualizar', use_container_width=True)
 
         if submit_button_liq:
             st.session_state.input_data_1 = input_data_1
