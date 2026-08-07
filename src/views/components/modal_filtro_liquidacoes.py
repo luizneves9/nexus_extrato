@@ -31,7 +31,7 @@ def registrar_filtros():
         with col3: input_sistema = st.text_input('Sistema', value=st.session_state.input_sistema)
         with col4: input_dp = st.text_input('DP', value=st.session_state.input_dp)
 
-        with col5: submit_button_refresh = st.form_submit_button(label='Confirmar', use_container_width=True)
+        with col5: submit_button_refresh = st.form_submit_button(label='Confirmar', use_container_width=True, type='primary')
         with col6: submit_button_cancel = st.form_submit_button(label='Cancelar', use_container_width=True)
 
         if submit_button_refresh:
