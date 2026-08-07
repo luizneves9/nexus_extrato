@@ -34,7 +34,7 @@ def excluir_registro(linha, senha):
             senha_digitada = st.text_input('Senha:', type='password')
 
         with col2:
-            if st.button('Confirmar'):
+            if st.button('Confirmar', type='primary'):
                 
                 if senha_digitada == senha:
                     sucesso = False

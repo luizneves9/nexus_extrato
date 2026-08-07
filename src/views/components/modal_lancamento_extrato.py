@@ -98,7 +98,7 @@ def modal_lancamento():
 
     with st.container(horizontal=True):
 
-        if st.button('Confirmar'):
+        if st.button('Confirmar', type='primary'):
             if input_empresa == '' or input_valor == 0 or input_historico.strip() == '': #type: ignore
                 st.toast('Aviso: Preencha todos os campos!', icon='⚠️')
             else:
