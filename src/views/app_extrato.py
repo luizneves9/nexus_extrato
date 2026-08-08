@@ -114,6 +114,10 @@ def main():
         df_com_selecao = df_resultado.copy()
         df_com_selecao.insert(0, 'Sel', False)
 
+        for c in df_com_selecao.columns:
+            if c not in ['Sel', 'ID', 'Data']:
+                df_com_selecao[c] = df_com_selecao[c].astype(str)
+
         tabela_editavel = st.data_editor(
             df_com_selecao,
             key='editor_extratos',
