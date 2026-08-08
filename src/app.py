@@ -1,11 +1,15 @@
 from database.connection import conectar_banco
 import streamlit as st
+import sys
+from pathlib import Path
 import warnings
 from security.ip_validator import verificar_acesso_ip
 
 # =========================================================================
 # CONFIGURAÇÃO INICIAL
 # =========================================================================
+
+sys.path.append(str(Path(__file__).resolve().parent))
 
 st.set_page_config(
     page_title='NEXUS',
