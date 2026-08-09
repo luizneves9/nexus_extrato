@@ -68,14 +68,11 @@ def salvar_liquidacao(sistema, id_extrato, valor, data_baixa, duplicata, parcela
         with engine.begin() as conn:
             conn.execute(text(INSERIR_REGISTRO), parametros)
 
-def buscar_liquidacoes_id(filtros):
+def buscar_liquidacoes_id(filtro):
     '''Monta a query com base nos filtros e retorna o dataframe.'''
     query = SELECT_LIQUIDACOES_ID
-    params = {
-        'id_selecionado_extrato': filtros['id_selecionado_extrato']
-    }
 
-    df = pd.read_sql(text(query), conectar_banco(), params=params)
+    df = pd.read_sql(text(query), conectar_banco(), params=filtro)
 
     return df
 

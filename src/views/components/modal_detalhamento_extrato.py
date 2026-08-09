@@ -2,35 +2,14 @@ import streamlit as st
 import pandas as pd
 from repositories.extratos_repositories import transformar_valor_decimal_em_str
 
-@st.dialog('Lançamentos', width='medium')
-def detalhar_lancamentos(dados, linha_selecionada):
+@st.dialog('Detalhamento do Registro Bancário', width='medium')
+def detalhar_lancamentos(df_extrato, df_liquidacoes):
     '''Modal de montagem do detalhamento referente ao registro bancário.'''
     
-    st.markdown(f'## Registro bancário: {linha_selecionada['Empresa'].title()}')
+    st.markdown(f'### Registro bancário: {df_extrato.iloc[0]['Empresa'].title()}')
 
-    # transformando em dataframe
-    df = [{
-        'ID': linha_selecionada['id'],
-        'Data': linha_selecionada['Data'],
-        'Banco': linha_selecionada['Banco'],
-        'Agência/Conta': linha_selecionada['Agência/Conta'],
-        'Desc. do Hist.': linha_selecionada['Desc. do Hist.'],
-        'Valor': linha_selecionada['Valor'],
-        'Valor liq.': linha_selecionada['Valor liq.'],
-        'Saldo': linha_selecionada['Saldo']
-    }]
+    st.dataframe(df_extrato.iloc[:,1:], hide_index=True)
 
-    df_extrato = pd.DataFrame(df)
+    st.markdown('### Lançamentos realizados:')
 
-    # transformando as colunas de valor para a formatação brasileira
-    colunas_valor = ['Valor', 'Valor liq.', 'Saldo']
-    for col in colunas_valor:
-        df_extrato[col] = df_extrato[col].map(transformar_valor_decimal_em_str)
-
-    st.dataframe(df_extrato, hide_index=True)
-
-    st.markdown('## Lançamentos realizados:')
-
-    dados['Valor liq.'] = dados['Valor liq.'].map(transformar_valor_decimal_em_str)
-
-    st.dataframe(dados, hide_index=True)
+    st.dataframe(df_liquidacoes, hide_index=True)
