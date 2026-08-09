@@ -1,9 +1,11 @@
 import uuid
 import streamlit as st
+import pandas as pd
 from sqlalchemy import text
 from database.connection import conectar_banco
 from repositories.extratos_repositories import buscar_empresas, buscar_extratos, buscar_liquidacoes_id, registrar_exclusao_extrato, executar_refresh_view, salvar_liquidacao, transformar_valor_decimal_em_str, transformar_valor_decimal_str_em_float
 from queries.extrato_queries import QUERY_DELETE_EXTRATO, REFRESH_VIEWS, INSERIR_REGISTRO
+from views.components.modal_detalhamento_extrato import detalhar_lancamentos
 
 engine = conectar_banco()
 
@@ -16,9 +18,52 @@ def listar_extratos(filtros):
     '''Busca e prepara a tabela para exibição.'''
     return buscar_extratos(filtros)
 
-def listar_liquidacoes_id(filtros):
-    '''Busca e prepara a tabela para exibição.'''
-    return buscar_liquidacoes_id(filtros)
+def listar_liquidacoes(linha):
+    '''Buscar liquidações realizadas em um registro do extrato.'''
+
+    # montagem do filtro
+    filtro = {'id_selecionado_extrato': str(linha['id'])}
+
+    # buscando registros no banco de dados
+    df_liquidacoes = buscar_liquidacoes_id(filtro)
+
+    # regra de negócio
+    if df_liquidacoes.empty:
+        return st.toast('Sem registros!', icon='⚠️')
+    
+    else:
+
+        # montagem do dataframe da linha selecionada
+        registro_extrato = [{
+            'Empresa': linha['Empresa'],
+            'Data': linha['Data'],
+            'Banco': linha['Banco'],
+            'Agência/Conta': linha['Agência/Conta'],
+            'Desc. do Hist.': linha['Desc. do Hist.'],
+            'Valor': linha['Valor'],
+            'Valor liq.': linha['Valor liq.'],
+            'Saldo': linha['Saldo']
+            }]
+
+        df_extrato = pd.DataFrame(registro_extrato)
+
+        # transformando as colunas de valor em formato brasileiro
+        colunas_valor = ['Valor', 'Valor liq.', 'Saldo']
+        for col in colunas_valor:
+            df_extrato[col] = df_extrato[col].map(transformar_valor_decimal_em_str)
+
+        df_liquidacoes['Valor liq.'] = df_liquidacoes['Valor liq.'].map(transformar_valor_decimal_em_str)
+
+        # transformando as colunas de data
+        df_extrato['Data'] = pd.to_datetime(df_extrato['Data'], errors='coerce')
+        df_extrato['Data'] = df_extrato['Data'].dt.strftime('%d/%m/%Y')    
+
+        colunas_data = ['Data liq.', 'Data log']
+        for col in colunas_data:
+            df_liquidacoes[col] = pd.to_datetime(df_liquidacoes[col], errors='coerce')
+            df_liquidacoes[col] = df_liquidacoes[col].dt.strftime('%d/%m/%Y')
+
+        detalhar_lancamentos(df_extrato, df_liquidacoes)
 
 def excluir_extrato(id):
     '''Excluir registro bancário do banco de dados.'''

@@ -3,7 +3,7 @@ from datetime import date
 import pandas as pd
 from views.components import (registrar_filtros, detalhar_lancamentos, modal_manutencao,
                               modal_lancamento, excluir_registro, operacao_multipla)
-from services.extrato_services import obter_lista_empresas, listar_extratos, listar_liquidacoes_id
+from services.extrato_services import obter_lista_empresas, listar_extratos, listar_liquidacoes
 from repositories.extratos_repositories import transformar_valor_decimal_str_em_float, transformar_valor_decimal_em_str
 
 def inicializar_state():
@@ -153,20 +153,7 @@ def main():
                 st.toast('Selecione um registro.', icon='⚠️')
 
             else:
-                colunas_valor = ['Valor', 'Valor liq.', 'Saldo']
-                for col in colunas_valor:
-                    linha[col] = transformar_valor_decimal_str_em_float(linha[col])
-
-                filtros_liquidacoes_id = {
-                    'id_selecionado_extrato': str(linha['id'])
-                }
-
-                df_lancamentos = listar_liquidacoes_id(filtros_liquidacoes_id)
-                
-                if df_lancamentos.empty:
-                    st.toast('Sem registros!', icon='⚠️')
-                else:
-                    detalhar_lancamentos(df_lancamentos, linha)
+                listar_liquidacoes(linha)
 
         if st.button('Manutenção', type='secondary'):
             if len(selecionados) != 1:
