@@ -69,25 +69,13 @@ def salvar_liquidacao(sistema, id_extrato, valor, data_baixa, duplicata, parcela
             conn.execute(text(INSERIR_REGISTRO), parametros)
 
 def buscar_liquidacoes_id(filtro):
-    '''Monta a query com base nos filtros e retorna o dataframe.'''
+    '''Interação com o banco de dados para localizar as liquidações e retornar um dataframe.'''
     query = SELECT_LIQUIDACOES_ID
+    return pd.read_sql(text(query), conectar_banco(), params=filtro)
 
-    df = pd.read_sql(text(query), conectar_banco(), params=filtro)
-
-    return df
-
-def update_tipo(id, tipo):
-    with engine.begin() as conn:
-        query = text('''
-            UPDATE public.db_extratos
-            SET tipo = :tipo_novo
-            WHERE id = :id_selecionado
-        ''')
-        conn.execute(query, {
-            "id_selecionado": int(id),
-            "tipo_novo": str(tipo)
-        })
-        return True
+def update_tipo(query, parametros, conn):
+    conn.execute(query, parametros)
+    return True
 
 def registrar_exclusao_extrato(query, id, conn):
     '''Deleta um registro de extrato bancário no banco de dados.'''

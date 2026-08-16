@@ -3,8 +3,8 @@ import streamlit as st
 import pandas as pd
 from sqlalchemy import text
 from database.connection import conectar_banco
-from repositories.extratos_repositories import buscar_empresas, buscar_extratos, buscar_liquidacoes_id, registrar_exclusao_extrato, executar_refresh_view, salvar_liquidacao, transformar_valor_decimal_em_str, transformar_valor_decimal_str_em_float
-from queries.extrato_queries import QUERY_DELETE_EXTRATO, REFRESH_VIEWS, INSERIR_REGISTRO
+from repositories.extratos_repositories import buscar_empresas, buscar_extratos, buscar_liquidacoes_id, registrar_exclusao_extrato, executar_refresh_view, salvar_liquidacao, transformar_valor_decimal_em_str, transformar_valor_decimal_str_em_float, update_tipo
+from queries.extrato_queries import QUERY_DELETE_EXTRATO, REFRESH_VIEWS, MANUTENCAO_REGISTRO_BANCARIO, ATUALIZAÇÃO_SOMA_RESUMOS
 from views.components.modal_detalhamento_extrato import detalhar_lancamentos
 
 engine = conectar_banco()
@@ -189,3 +189,26 @@ def validar_e_criar_item_baixa(sistema, data_liq, valor, dp, parc, saldo_referen
         'DP': duplicata,
         'Parc.': parcela
     }
+
+def manutencao_extrato(id, tipo_selecionado):
+    '''Realiza um ajuste no registro bancário'''
+
+    # query de atualização bancária
+    query = text(MANUTENCAO_REGISTRO_BANCARIO)
+
+    # montagem de filtros
+    filtros = {
+        'id_selecionado': int(id),
+        'tipo_novo': str(tipo_selecionado) 
+    }
+
+    # salvando no banco de dados
+    try:
+        with engine.begin() as conn:
+            update_tipo(query, filtros, conn)
+    except:
+        raise ValueError('Erro ao salvar registro.')
+
+    # atualizando resumos bancários
+    query = text(REFRESH_VIEWS)
+    executar_refresh_view()
