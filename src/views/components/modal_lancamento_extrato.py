@@ -73,7 +73,8 @@ def modal_lancamento():
         "Ag.: 3552-1 Cc: 31800-0": [237 ,"LONDRINA SUL TRANSPORTE COLETIVO LTDA"],
         "Ag.: 4018-0 Cc: 99876-7": [341 ,"EMPR STO ANJO DA GUARDA LTDA"],
         "Ag.: 3407-X Cc: 5180-2": [1 ,"VIACAO OURO BRANCO LTDA"],
-        "Ag.: 4315 Cc: 5772148814": [104 ,"VIACAO OURO BRANCO LTDA"]
+        "Ag.: 4315 Cc: 5772148814": [104 ,"VIACAO OURO BRANCO LTDA"],
+        "Ag.: 4114-0 Cc: 96059-6": [341 ,"JBL TURISMO LTDA"]
     }
 
     col2, col3 = st.columns([2.5, 1.2])
