@@ -1,7 +1,7 @@
 import streamlit as st
 import uuid
+from services.extrato_services import processar_liquidacao, validar_e_criar_item_baixa
 from repositories.extratos_repositories import transformar_valor_decimal_em_str, transformar_valor_decimal_str_em_float
-from repositories.extratos_repositories import salvar_movimentacao
 
 @st.dialog('Liquidação Multipla', width='large')
 def operacao_multipla(linha_selecionada):
@@ -43,14 +43,18 @@ def operacao_multipla(linha_selecionada):
             st.write('##')
             if st.button('+', key='add_btn'):
 
-                if (sistema_input == 'Corporativo' and dp_input.strip() != '' and parc_input.strip() != '') or (sistema_input == 'SSW' and dp_input.strip() != '') or (sistema_input == 'Delsoft' and dp_input.strip() != '') or (sistema_input == 'Diversos' and dp_input.strip() != ''):
-
-                    if linha_selecionada["Saldo"] > 0:
-                        if val_input > 0:
-                            st.session_state.temp_baixas.append({'_id': str(uuid.uuid4()), 'Sistema': sistema_input, 'Data liq.': date_input, 'Valor': val_input, 'DP': dp_input, 'Parc.':parc_input})
-                    else:
-                        if val_input < 0:
-                            st.session_state.temp_baixas.append({'_id': str(uuid.uuid4()), 'Sistema': sistema_input, 'Data liq.': date_input, 'Valor': val_input, 'DP': dp_input, 'Parc.':parc_input})
+                try:
+                    registro = validar_e_criar_item_baixa(
+                        sistema_input,
+                        date_input,
+                        val_input,
+                        dp_input,
+                        parc_input,
+                        linha_selecionada['Saldo']
+                    )
+                    st.session_state.temp_baixas.append(registro)
+                except Exception as e:
+                    st.toast(e, icon='⚠️')
 
     if st.session_state.temp_baixas:
 
@@ -92,81 +96,35 @@ def operacao_multipla(linha_selecionada):
     with col_confirmar:
         if st.button('Confirmar', width='stretch', type='primary'):
 
-            saldo_disponivel = round(float(linha_selecionada['Saldo']), 2)
-
-            if  saldo_disponivel >= 0 and baixa_acumulada > saldo_disponivel:
-                st.toast(f'Operação negada! O valor acumulado ({transformar_valor_decimal_em_str(baixa_acumulada)}) é maior que o saldo disponível ({transformar_valor_decimal_em_str(linha_selecionada["Saldo"])}).', icon='⚠️')
-            
-            elif saldo_disponivel < 0 and baixa_acumulada < saldo_disponivel:
-                st.toast(f'Operação negada! O valor acumulado ({transformar_valor_decimal_em_str(baixa_acumulada)}) é maior que o saldo disponível ({transformar_valor_decimal_em_str(linha_selecionada["Saldo"])}).', icon='⚠️')
-
-            else:
-                
-                if 'temp_baixas' in st.session_state and st.session_state.temp_baixas:
-                    
-                    for item in st.session_state.temp_baixas:
-
-                        try:
-                            salvar_movimentacao(
-                                id_extrato=linha_selecionada['id'],
-                                valor=item['Valor'],
-                                data_baixa=item['Data liq.'],
-                                sistema=item['Sistema'],
-                                duplicata=item['DP'],
-                                parcela=item['Parc.']
-                            )
-
-                        except Exception as e:
-                            st.toast(f'Erro ao registrar liquidação! ({e})', icon='⚠️')
-
+            if 'temp_baixas' in st.session_state and st.session_state.temp_baixas:
+                try:
+                    processar_liquidacao(
+                        registro_extrato=linha_selecionada,
+                        liquidacao_em_lote=True,
+                        lista_lote=st.session_state.temp_baixas
+                    )
                     st.session_state['mensagem_sucesso'] = 'Liquidação realizada com sucesso!'
                     st.session_state.temp_baixas = []
                     st.rerun()
+                except Exception as e:
+                    st.toast(e, icon='⚠️')
 
-                else:
-
-                    if linha_selecionada['Saldo'] >= 0 and val_input <= 0:
-                        st.toast('O valor deve ser maior que zero.', icon='⚠️')
-
-                    elif linha_selecionada['Saldo'] < 0 and val_input >= 0:
-                        st.toast('O valor deve ser menor que zero.', icon='⚠️')
-
-                    elif linha_selecionada['Saldo'] >= 0 and val_input > saldo_disponivel:
-                        st.toast(f'Operação negada! O valor digitado ({transformar_valor_decimal_em_str(val_input)}) é maior que o saldo disponível ({transformar_valor_decimal_em_str(saldo_disponivel)}).', icon='⚠️')
-
-                    elif linha_selecionada['Saldo'] < 0 and val_input < saldo_disponivel:
-                        st.toast(f'Operação negada! O valor digitado ({transformar_valor_decimal_em_str(val_input)}) é menor que o saldo disponível ({transformar_valor_decimal_em_str(saldo_disponivel)}).', icon='⚠️')
-
-                    elif (sistema_input == 'Corporativo' and (dp_input.strip() == '' or parc_input.strip() == '')):
-                        st.toast(f'Operação negada! Favor preencher a DP e Parcela.', icon='⚠️')
-                    
-                    elif (sistema_input == 'SSW' and dp_input.strip() == ''):
-                        st.toast(f'Operação negada! Favor preencher a DP.', icon='⚠️')
-                    
-                    elif (sistema_input == 'Delsoft' and dp_input.strip() == ''):
-                        st.toast(f'Operação negada! Favor preencher a DP/Histórico.', icon='⚠️')
-                    
-                    elif (sistema_input == 'Diversos' and dp_input.strip() == ''):
-                        st.toast(f'Operação negada! Favor preencher a DP/Histórico.', icon='⚠️')
-
-                    else:
-
-                        try:
-                            salvar_movimentacao(
-                                id_extrato=linha_selecionada['id'],
-                                valor=val_input,
-                                data_baixa=date_input,
-                                sistema=sistema_input,
-                                duplicata=dp_input,
-                                parcela=parc_input
-                            )
-
-                            st.session_state['mensagem_sucesso'] = 'Liquidação realizada com sucesso!'
-                            st.session_state.temp_baixas = []
-                            st.rerun()
-
-                        except Exception as e:
-                            st.toast('Erro ao registrar liquidação!', icon='⚠️')
+            else:
+                try:
+                    processar_liquidacao(
+                        registro_extrato=linha_selecionada,
+                        liquidacao_em_lote=False,
+                        val_input=val_input,
+                        sistema_input=sistema_input,
+                        dp_input=dp_input,
+                        parc_input=parc_input,
+                        date_input=date_input
+                    )
+                    st.session_state['mensagem_sucesso'] = 'Liquidação realizada com sucesso!'
+                    st.session_state.temp_baixas = []
+                    st.rerun()
+                except Exception as e:
+                    st.toast(e, icon='⚠️')
 
     with col_cancelar:
         if st.button('Cancelar', width='stretch'):

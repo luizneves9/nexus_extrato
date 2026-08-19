@@ -1,7 +1,7 @@
 import pandas as pd
 from sqlalchemy import text
 from database.connection import conectar_banco
-from queries.extrato_queries import LISTA_EMPRESAS, SELECT_EXTRATO, SELECT_LIQUIDACOES_ID
+from queries.extrato_queries import LISTA_EMPRESAS, SELECT_EXTRATO, SELECT_LIQUIDACOES_ID, INSERIR_REGISTRO
 
 engine = conectar_banco()
 
@@ -55,44 +55,27 @@ def buscar_extratos(filtros):
 
     return df
 
-def salvar_movimentacao(sistema, id_extrato, valor, data_baixa, duplicata, parcela):
-    with engine.begin() as conn:
-        query = text('''
-            INSERT INTO public.db_liquidacoes (id_extrato, valor, data_liquidacao, sistema, duplicata, parcela)
-            VALUES (:id, :val, :dt, :sis, :dp, :par)
-        ''')
-        conn.execute(query, {
-            "id": int(id_extrato),
-            "val": valor,
-            "dt": data_baixa,
-            "sis": sistema,
-            "dp": duplicata,
-            "par": parcela
-        })
+def salvar_liquidacao(sistema, id_extrato, valor, data_baixa, duplicata, parcela):
+        '''Acessa o banco de dados e inseri um registro de liquidação.'''
+        parametros = {
+                    "id": int(id_extrato),
+                    "val": valor,
+                    "dt": data_baixa,
+                    "sis": sistema,
+                    "dp": duplicata,
+                    "par": parcela
+                }
+        with engine.begin() as conn:
+            conn.execute(text(INSERIR_REGISTRO), parametros)
 
-def buscar_liquidacoes_id(filtros):
-    '''Monta a query com base nos filtros e retorna o dataframe.'''
+def buscar_liquidacoes_id(filtro):
+    '''Interação com o banco de dados para localizar as liquidações e retornar um dataframe.'''
     query = SELECT_LIQUIDACOES_ID
-    params = {
-        'id_selecionado_extrato': filtros['id_selecionado_extrato']
-    }
+    return pd.read_sql(text(query), conectar_banco(), params=filtro)
 
-    df = pd.read_sql(text(query), conectar_banco(), params=params)
-
-    return df
-
-def update_tipo(id, tipo):
-    with engine.begin() as conn:
-        query = text('''
-            UPDATE public.db_extratos
-            SET tipo = :tipo_novo
-            WHERE id = :id_selecionado
-        ''')
-        conn.execute(query, {
-            "id_selecionado": int(id),
-            "tipo_novo": str(tipo)
-        })
-        return True
+def update_tipo(query, parametros, conn):
+    conn.execute(query, parametros)
+    return True
 
 def registrar_exclusao_extrato(query, id, conn):
     '''Deleta um registro de extrato bancário no banco de dados.'''

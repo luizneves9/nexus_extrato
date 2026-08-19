@@ -33,21 +33,34 @@ engine = conectar_banco()
 
 def main():
 
-    pagina_extrato_bancario = st.Page('views/app_extrato.py', title='Extrato Bancário')
-    pagina_liquidacoes = st.Page('views/app_liquidacoes.py', title='Liquidações')    
-    pagina_resumo = st.Page('views/3_resumo_bancario.py', title='Diário')
-    pagina_santo_anjo = st.Page('views/4_resumo_bancario_santo_anjo.py', title='Extrato - Santo Anjo')
+    st.html("""
+        <style>
+            /* Estiliza os títulos das seções da navegação */
+            [data-testid="stSidebarNavItems"] > div:first-child,
+            [data-testid="stSidebarNavSeparator"] + div {
+                font-weight: bold !important;
+                font-size: 1.05rem !important;
+                color: #1F2937 !important; /* Ajuste a cor desejada */
+            }
+        </style>
+    """)
+
 
     pages = {
-        'Conta Corrente:': [
-            pagina_extrato_bancario,
-            pagina_liquidacoes
+        'Conta Corrente': [
+            st.Page('views/app_extrato.py', title='⠀⠀⠀Extrato Bancário'),
+            st.Page('views/app_liquidacoes.py', title='⠀⠀⠀Liquidações')
         ],
         'Resumo Bancário': [
-            pagina_resumo
+            st.Page('views/3_resumo_bancario.py', title='⠀⠀⠀Diário')
         ],
-        'Personalizado:': [
-            pagina_santo_anjo
+        'Personalizado': [
+            st.Page('views/4_resumo_bancario_santo_anjo.py', title='⠀⠀⠀Extrato - Santo Anjo')
+        ],
+        'Cadastros': [
+            st.Page('views/register_empresa.py', title='⠀⠀⠀Empresas*'),
+            st.Page('views/register_banco.py', title='⠀⠀⠀Contas bancárias*'),
+            st.Page('views/register_regras.py', title='⠀⠀⠀Regras de extrato*'),
         ]
     }
 

@@ -57,3 +57,20 @@ REFRESH_VIEWS = '''
     REFRESH MATERIALIZED VIEW mv_fluxo_caixa_diario;
     COMMIT;
 '''
+
+INSERIR_REGISTRO = '''
+    INSERT INTO public.db_liquidacoes (id_extrato, valor, data_liquidacao, sistema, duplicata, parcela)
+    VALUES (:id, :val, :dt, :sis, :dp, :par)
+'''
+MANUTENCAO_REGISTRO_BANCARIO = '''
+    UPDATE public.db_extratos
+    SET tipo = :tipo_novo
+    WHERE id = :id_selecionado
+'''
+
+ATUALIZAÇÃO_SOMA_RESUMOS = '''
+    BEGIN;
+    REFRESH MATERIALIZED VIEW mv_fluxo_aplicacao_diario;
+    REFRESH MATERIALIZED VIEW mv_fluxo_caixa_diario;
+    COMMIT;
+'''

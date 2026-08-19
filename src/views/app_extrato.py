@@ -1,16 +1,12 @@
 import streamlit as st
 from datetime import date
 import pandas as pd
-from views.components.modal_filtro_extratos import registrar_filtros
-from views.components.modal_detalhamento_extrato import detalhar_lancamentos
-from views.components.modal_manutencao_extrato import modal_manutencao
-from views.components.modal_lancamento_extrato import modal_lancamento
-from views.components.modal_excluir_extrato import excluir_registro
-from views.components.modal_liquidacao_extrato import operacao_multipla
-from services.extrato_services import obter_lista_empresas, listar_extratos, listar_liquidacoes_id
+from views.components import (registrar_filtros, detalhar_lancamentos, modal_manutencao,
+                              modal_lancamento, excluir_registro, operacao_multipla)
+from services.extrato_services import obter_lista_empresas, listar_extratos, listar_liquidacoes
 from repositories.extratos_repositories import transformar_valor_decimal_str_em_float, transformar_valor_decimal_em_str
 
-def inicializar_state(lista_empresas):
+def inicializar_state():
     '''Inicialização do session state'''
     defaults = {
         'data_selecionada_1': date.today(),
@@ -83,7 +79,7 @@ def main():
     )
 
     lista_empresas = obter_lista_empresas()
-    inicializar_state(lista_empresas)
+    inicializar_state()
     render_sidebar(lista_empresas)
     selecionados = pd.DataFrame()
 
@@ -118,6 +114,10 @@ def main():
         df_com_selecao = df_resultado.copy()
         df_com_selecao.insert(0, 'Sel', False)
 
+        for c in df_com_selecao.columns:
+            if c not in ['Sel', 'ID', 'Data']:
+                df_com_selecao[c] = df_com_selecao[c].astype(str)
+
         tabela_editavel = st.data_editor(
             df_com_selecao,
             key='editor_extratos',
@@ -134,7 +134,7 @@ def main():
         selecionados = tabela_editavel[tabela_editavel['Sel'] == True]
 
     if not selecionados.empty:
-        linha = selecionados.iloc[0]
+        linha = selecionados.iloc[0].copy()
         
     with st.container(horizontal=True):
 
@@ -144,6 +144,7 @@ def main():
                 st.toast('Selecione um registro.', icon='⚠️')
 
             else:
+                if 'temp_baixas' in st.session_state: del st.session_state['temp_baixas']
                 operacao_multipla(linha)
 
         if st.button(f'Detalhar', type='secondary'):
@@ -152,20 +153,7 @@ def main():
                 st.toast('Selecione um registro.', icon='⚠️')
 
             else:
-                colunas_valor = ['Valor', 'Valor liq.', 'Saldo']
-                for col in colunas_valor:
-                    linha[col] = transformar_valor_decimal_str_em_float(linha[col])
-
-                filtros_liquidacoes_id = {
-                    'id_selecionado_extrato': str(linha['id'])
-                }
-
-                df_lancamentos = listar_liquidacoes_id(filtros_liquidacoes_id)
-                
-                if df_lancamentos.empty:
-                    st.toast('Sem registros!', icon='⚠️')
-                else:
-                    detalhar_lancamentos(df_lancamentos, linha)
+                listar_liquidacoes(linha)
 
         if st.button('Manutenção', type='secondary'):
             if len(selecionados) != 1:
