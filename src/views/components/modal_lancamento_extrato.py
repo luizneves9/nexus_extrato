@@ -74,7 +74,7 @@ def modal_lancamento():
         "Ag.: 4018-0 Cc: 99876-7": [341 ,"EMPR STO ANJO DA GUARDA LTDA"],
         "Ag.: 3407-X Cc: 5180-2": [1 ,"VIACAO OURO BRANCO LTDA"],
         "Ag.: 4315 Cc: 5772148814": [104 ,"VIACAO OURO BRANCO LTDA"],
-        "Ag.: 4114-0 Cc: 96059-6": [104 ,"JBL TURISMO LTDA"]
+        "Ag.: 4114-0 Cc: 96059-6": [341 ,"JBL TURISMO LTDA"]
     }
 
     col2, col3 = st.columns([2.5, 1.2])
