@@ -24,18 +24,15 @@ def modal_manutencao(linha_selecionada):
     with col_confirmar:
         if st.button('Confirmar', width='stretch', type='primary'):
             try:
-                result = manutencao_extrato(
+                msg = manutencao_extrato(
                     id=linha_selecionada['id'],
                     tipo_selecionado=selecao_tipo
                 )
-                if result:
-                    st.session_state['mensagem_sucesso'] = 'Alteração registrada!'
-                    st.rerun()
-                else:
-                    st.session_state['mensagem_erro'] = 'Erro ao salvar o registro!'
-                    st.rerun()
-            except:
-                st.session_state['mensagem_erro'] = 'Erro ao salvar o registro!'
+                st.session_state['mensagem_sucesso'] = msg
+                st.rerun()
+
+            except Exception as e:
+                st.session_state['mensagem_erro'] = f'Erro ao salvar o registro!'
                 st.rerun()
 
     with col_cancelar:

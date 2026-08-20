@@ -185,7 +185,7 @@ def main():
         st.toast(st.session_state.pop('mensagem_sucesso'), icon='✅')
 
     if 'mensagem_erro' in st.session_state:
-        st.toast(st.session_state.pop('mensagem_sucesso'), icon='❌')
+        st.toast(st.session_state.pop('mensagem_erro'), icon='❌')
 
 if __name__ == '__main__':
     main()

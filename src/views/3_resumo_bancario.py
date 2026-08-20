@@ -11,6 +11,13 @@ if 'resumo_bancario_input_empresa' not in st.session_state: st.session_state.res
 if 'resumo_bancario_input_data' not in st.session_state: st.session_state.resumo_bancario_input_data = date.today()
 
 # =========================================================================
+# FUNÇÕES
+# =========================================================================
+
+def transformar_valor_em_str(valor):
+    return f'{valor:,.2f}'.replace(',', 'v').replace('.', ',').replace('v', '.')
+
+# =========================================================================
 # INTERAÇÕES COM O USUÁRIO
 # =========================================================================
 
@@ -70,7 +77,7 @@ soma_econtas = df.loc[df['Data'] == st.session_state.resumo_bancario_input_data,
 soma_transferencia = df.loc[df['Data'] == st.session_state.resumo_bancario_input_data, 'Transferência'].sum()
 soma_resgate = df.loc[df['Data'] == st.session_state.resumo_bancario_input_data, 'Resgate'].sum()
 soma_aplicacao = df.loc[df['Data'] == st.session_state.resumo_bancario_input_data, 'Aplicação'].sum()
-soma_saldo = df.loc[df['Data'] == st.session_state.resumo_bancario_input_data, 'Saldo'].sum()
+soma_saldo = df['Saldo'].sum()
 
 with st.container(horizontal=True):
     st.metric('Crédito', f'R$ {soma_credito:,.2f}'.replace(',', 'v').replace('.', ',').replace('v', '.'))
@@ -81,19 +88,13 @@ with st.container(horizontal=True):
     st.metric('Aplicação', f'R$ {soma_aplicacao:,.2f}'.replace(',', 'v').replace('.', ',').replace('v', '.'))
     st.metric('Saldo', f'R$ {soma_saldo:,.2f}'.replace(',', 'v').replace('.', ',').replace('v', '.'))
 
+lista_colunas_valores = ['Crédito', 'Débito', 'Encontro de Contas', 'Transferência', 'Resgate', 'Aplicação', 'Mov. do dia', 'Saldo']
+for col in lista_colunas_valores:
+    df[col] = df[col].map(transformar_valor_em_str)
+
 st.dataframe(
     df,
-    hide_index=True,
-    column_config={
-        'Crédito': st.column_config.NumberColumn('Crédito', format='%.2f'),
-        'Saldo': st.column_config.NumberColumn('Saldo', format='%.2f'),
-        'Débito': st.column_config.NumberColumn('Débito', format='%.2f'),
-        'Encontro de Contas': st.column_config.NumberColumn('Encontro de Contas', format='%.2f'),
-        'Transferência': st.column_config.NumberColumn('Transferência', format='%.2f'),
-        'Resgate': st.column_config.NumberColumn('Resgate', format='%.2f'),
-        'Aplicação': st.column_config.NumberColumn('Aplicação', format='%.2f'),
-        'Mov. do dia': st.column_config.NumberColumn('Mov. do dia', format='%.2f'),
-    }
+    hide_index=True
 )
 
 # tabela de dados da aplicação
@@ -122,7 +123,7 @@ st.markdown(
 soma_resgate_invest = df_aplicacao.loc[df['Data'] == st.session_state.resumo_bancario_input_data, 'Resgate'].sum()
 soma_aplicacao_invest = df_aplicacao.loc[df['Data'] == st.session_state.resumo_bancario_input_data, 'Aplicação'].sum()
 soma_rendimento_invest = df_aplicacao.loc[df['Data'] == st.session_state.resumo_bancario_input_data, 'Rendimento'].sum()
-soma_saldo_invest = df_aplicacao.loc[df['Data'] == st.session_state.resumo_bancario_input_data, 'Saldo'].sum()
+soma_saldo_invest = df_aplicacao['Saldo'].sum()
 
 with st.container(horizontal=True):
     st.metric('Resgate', f'R$ {soma_resgate_invest:,.2f}'.replace(',', 'v').replace('.', ',').replace('v', '.'))
@@ -130,13 +131,11 @@ with st.container(horizontal=True):
     st.metric('Rendimento', f'R$ {soma_rendimento_invest:,.2f}'.replace(',', 'v').replace('.', ',').replace('v', '.'))
     st.metric('Saldo', f'R$ {soma_saldo_invest:,.2f}'.replace(',', 'v').replace('.', ',').replace('v', '.'))
 
+lista_colunas_valores_aplic = ['Resgate', 'Aplicação', 'Rendimento', 'Mov. do dia', 'Saldo']
+for col in lista_colunas_valores_aplic:
+    df_aplicacao[col] = df_aplicacao[col].map(transformar_valor_em_str)
+
 st.dataframe(
     df_aplicacao,
-    hide_index=True,
-    column_config={
-        'Resgate': st.column_config.NumberColumn('Resgate', format='%.2f'),
-        'Aplicação': st.column_config.NumberColumn('Aplicação', format='%.2f'),
-        'Rendimento': st.column_config.NumberColumn('Rendimento', format='%.2f'),
-        'Mov. do dia': st.column_config.NumberColumn('Mov. do dia', format='%.2f'),
-    }
+    hide_index=True
 )

@@ -211,4 +211,5 @@ def manutencao_extrato(id, tipo_selecionado):
 
     # atualizando resumos bancários
     query = text(REFRESH_VIEWS)
-    executar_refresh_view()
+    executar_refresh_view(query)
+    return 'Registro atualizado com sucesso!'
