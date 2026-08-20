@@ -59,7 +59,7 @@ def main():
         ],
         'Cadastros': [
             st.Page('views/register_empresa.py', title='⠀⠀⠀Empresas*'),
-            st.Page('views/register_banco.py', title='⠀⠀⠀Contas bancárias*'),
+            st.Page('views/register_banco.py', title='⠀⠀⠀Contas bancárias'),
             st.Page('views/register_regras.py', title='⠀⠀⠀Regras de extrato*'),
         ]
     }
