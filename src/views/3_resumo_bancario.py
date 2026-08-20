@@ -74,8 +74,8 @@ def render_sidebar():
         col1, col2, col3, col4, col5, col6 = st.columns([1, 1, 1, 1, 1, 1])
         with col1: selecao_data = st.date_input('Data:', value=st.session_state.resumo_bancario_data, format='DD/MM/YYYY')
         with col2: selecao_empresa = st.text_input('Empresa:', value=st.session_state.resumo_bancario_empresa)
-        with col3: selecao_banco = st.text_input('Banco', value=st.session_state.resumo_bancario_banco)
-        with col4: selecao_agencia = st.text_input('Agencia', value=st.session_state.resumo_bancario_agencia)
+        with col3: selecao_banco = st.text_input('Banco', value=st.session_state.resumo_bancario_banco, placeholder='<em desenvolvimento>')
+        with col4: selecao_agencia = st.text_input('Agencia', value=st.session_state.resumo_bancario_agencia, placeholder='<em desenvolvimento>')
         with col5: submit_button_filtros = st.form_submit_button(label='Mais filtros', use_container_width=True)
         with col6: submit_button = st.form_submit_button(label='Atualizar', use_container_width=True)
 
