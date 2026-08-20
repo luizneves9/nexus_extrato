@@ -24,5 +24,13 @@ def main():
     else:
         st.markdown('Sem registro!')
 
+    with st.container(horizontal=True):
+        if st.button('Incluir*'):
+            st.toast('Em desenvolvimento!')
+        if st.button('Manutenção*'):
+            st.toast('Em desenvolvimento!')
+        if st.button('Excluir*'):
+            st.toast('Em desenvolvimento!')
+
 if __name__ == '__main__':
     main()
