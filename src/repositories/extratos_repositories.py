@@ -85,3 +85,6 @@ def registrar_exclusao_extrato(query, id, conn):
 def executar_refresh_view(query):
     with engine.begin() as conn:
         conn.execute(query)
+
+def buscar_contas_bancarias(query, conn):
+    return pd.read_sql(query, conn)
