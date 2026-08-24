@@ -3,7 +3,7 @@ import uuid
 from services.extrato_services import processar_liquidacao, validar_e_criar_item_baixa
 from repositories.extratos_repositories import transformar_valor_decimal_em_str, transformar_valor_decimal_str_em_float
 
-@st.dialog('Liquidação Multipla', width='medium')
+@st.dialog('Liquidação Multipla', width='medium', dismissible=False)
 def operacao_multipla(linha_selecionada):
 
     # função para excluir um registro na tabela temporária
