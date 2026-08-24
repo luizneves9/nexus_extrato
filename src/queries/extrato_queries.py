@@ -74,3 +74,13 @@ ATUALIZAÇÃO_SOMA_RESUMOS = '''
     REFRESH MATERIALIZED VIEW mv_fluxo_caixa_diario;
     COMMIT;
 '''
+
+CONTAS_BANCARIAS = '''
+    SELECT
+        id,
+        nome_empresa,
+        agencia_conta,
+        banco
+    FROM cadastro_contas_bancarias
+    ORDER BY nome_empresa, banco, agencia_conta, id
+'''

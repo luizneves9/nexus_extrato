@@ -3,7 +3,7 @@ import uuid
 from services.extrato_services import processar_liquidacao, validar_e_criar_item_baixa
 from repositories.extratos_repositories import transformar_valor_decimal_em_str, transformar_valor_decimal_str_em_float
 
-@st.dialog('Liquidação Multipla', width='large')
+@st.dialog('Liquidação Multipla', width='medium', dismissible=False)
 def operacao_multipla(linha_selecionada):
 
     # função para excluir um registro na tabela temporária
@@ -23,7 +23,7 @@ def operacao_multipla(linha_selecionada):
     linha_selecionada['Saldo'] = transformar_valor_decimal_str_em_float(linha_selecionada['Saldo'])
 
     with st.container(border=True):
-        col1, col2, col3, col4, col5, col6 = st.columns([1, 1, 1.2, 2, 2, 1])
+        col1, col2, col3, col4, col5, col6 = st.columns([2.5, 2, 2.9, 1.5, 1, 1])
         with col1:
             sistema_input = st.selectbox('Sistema', ['Corporativo', 'SSW', 'Delsoft', 'Diversos'])
         
@@ -34,10 +34,10 @@ def operacao_multipla(linha_selecionada):
             val_input = st.number_input('Valor', step=0.01, value=linha_selecionada['Saldo'])
 
         with col4:
-            dp_input = st.text_input('DP/Histórico')
+            dp_input = st.text_input('DP/Hist.')
             
         with col5:
-            parc_input = st.text_input('Parc./Complemento', value='')
+            parc_input = st.text_input('Parc.', value='')
 
         with col6:
             st.write('##')

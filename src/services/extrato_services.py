@@ -3,8 +3,8 @@ import streamlit as st
 import pandas as pd
 from sqlalchemy import text
 from database.connection import conectar_banco
-from repositories.extratos_repositories import buscar_empresas, buscar_extratos, buscar_liquidacoes_id, registrar_exclusao_extrato, executar_refresh_view, salvar_liquidacao, transformar_valor_decimal_em_str, transformar_valor_decimal_str_em_float, update_tipo
-from queries.extrato_queries import QUERY_DELETE_EXTRATO, REFRESH_VIEWS, MANUTENCAO_REGISTRO_BANCARIO, ATUALIZAÇÃO_SOMA_RESUMOS
+from repositories.extratos_repositories import buscar_empresas, buscar_extratos, buscar_liquidacoes_id, registrar_exclusao_extrato, executar_refresh_view, salvar_liquidacao, transformar_valor_decimal_em_str, transformar_valor_decimal_str_em_float, update_tipo, buscar_contas_bancarias
+from queries.extrato_queries import QUERY_DELETE_EXTRATO, REFRESH_VIEWS, MANUTENCAO_REGISTRO_BANCARIO, CONTAS_BANCARIAS
 from views.components.modal_detalhamento_extrato import detalhar_lancamentos
 
 engine = conectar_banco()
@@ -213,3 +213,18 @@ def manutencao_extrato(id, tipo_selecionado):
     query = text(REFRESH_VIEWS)
     executar_refresh_view(query)
     return 'Registro atualizado com sucesso!'
+
+def listar_contas_bancarias():
+    '''Listagem das contas bancárias cadastradas na empresa.'''
+
+    query = CONTAS_BANCARIAS
+    try:
+        with engine.begin() as conn:
+            df = buscar_contas_bancarias(query, conn)
+            if df is not None and not df.empty:
+                return df
+            else:
+                return pd.DataFrame()
+    except:
+        raise ValueError('Erro ao processar dados.')
+
