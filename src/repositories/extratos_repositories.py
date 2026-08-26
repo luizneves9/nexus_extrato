@@ -88,3 +88,12 @@ def executar_refresh_view(query):
 
 def buscar_contas_bancarias(query, conn):
     return pd.read_sql(query, conn)
+
+def salvar_divisao(query, parametros, conn):
+    result = conn.execute(query, parametros)
+    lista = result.scalars().all()
+    return lista
+
+def salvar_liquidacao_divisao(query, parametro, conn):
+    conn.execute(query, parametro)
+    return True

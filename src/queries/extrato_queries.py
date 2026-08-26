@@ -84,3 +84,16 @@ CONTAS_BANCARIAS = '''
     FROM cadastro_contas_bancarias
     ORDER BY nome_empresa, banco, agencia_conta, id
 '''
+
+INSERIR_DIVISAO = '''
+    INSERT INTO public.db_extratos (banco, agencia_conta, data_contabil, descricao_historico, complemento, tipo, valor, nome_empresa)
+    VALUES
+        (:banco, :agencia, :data, :historico, 'SUBSTITUICAO MANUAL', :tipo, -(:valor), :empresa)
+'''
+
+INSERIR_LIQUIDACAO_DIVISAO = '''
+    INSERT INTO public.db_liquidacoes (id_extrato, valor, data_liquidacao, sistema, duplicata, parcela)
+    VALUES
+        (:id_extrato_1, :valor_1, :data, 'Diversos', 'SUBSTITUIDO', :lista_ids),
+        (:id_extrato_2, -(:valor_2), :data, 'Diversos', 'SUBSTITUIDO', :lista_ids)
+'''

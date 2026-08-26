@@ -3,8 +3,8 @@ import streamlit as st
 import pandas as pd
 from sqlalchemy import text
 from database.connection import conectar_banco
-from repositories.extratos_repositories import buscar_empresas, buscar_extratos, buscar_liquidacoes_id, registrar_exclusao_extrato, executar_refresh_view, salvar_liquidacao, transformar_valor_decimal_em_str, transformar_valor_decimal_str_em_float, update_tipo, buscar_contas_bancarias
-from queries.extrato_queries import QUERY_DELETE_EXTRATO, REFRESH_VIEWS, MANUTENCAO_REGISTRO_BANCARIO, CONTAS_BANCARIAS
+from repositories.extratos_repositories import buscar_empresas, buscar_extratos, buscar_liquidacoes_id, registrar_exclusao_extrato, executar_refresh_view, salvar_liquidacao, transformar_valor_decimal_em_str, transformar_valor_decimal_str_em_float, update_tipo, buscar_contas_bancarias, salvar_divisao, salvar_liquidacao_divisao
+from queries.extrato_queries import QUERY_DELETE_EXTRATO, REFRESH_VIEWS, MANUTENCAO_REGISTRO_BANCARIO, CONTAS_BANCARIAS, INSERIR_DIVISAO, INSERIR_LIQUIDACAO_DIVISAO
 from views.components.modal_detalhamento_extrato import detalhar_lancamentos
 
 engine = conectar_banco()
@@ -227,4 +227,85 @@ def listar_contas_bancarias():
                 return pd.DataFrame()
     except:
         raise ValueError('Erro ao processar dados.')
+
+def validar_e_criar_item_divisao(valor_divisao):
+    """
+    Aplica as regras de negócio para validar se um item pode ser adicionado.
+    Lança ValueError se os dados forem inválidos.
+    """
+
+    # validação
+    if valor_divisao <= 0:
+        raise ValueError('O valor informado deve ser maior que zero.')
+
+    return {
+        '_id': str(uuid.uuid4()),
+        'Valor': valor_divisao
+    }
+
+def registrar_divisao(valor_original, soma_tabela, linha_selecionada, tabela_divisao):
+    '''
+    Registra uma divisão de valores.
+    '''
+
+    # validações
+    if len(tabela_divisao) == 1:
+        raise ValueError('A quantidade de registros deve ser maior que um.')
+
+    if abs(valor_original) != abs(soma_tabela):
+        raise ValueError('Valor total da divisão está diferente do valor original.')
+
+    # montando a query
+    query = INSERIR_DIVISAO
+
+    for c in tabela_divisao:
+        query += f" ,(:banco, :agencia, :data, :historico, 'SUBSTITUICAO MANUAL', :tipo, {-c['Valor'] if transformar_valor_decimal_str_em_float(linha_selecionada['Valor']) < 0 else c['Valor']}, :empresa)"
+
+    # incluindo return
+    query += ' RETURNING id'
+
+    # formatando query
+    query_final = text(query)
+
+    parametro = {
+        'banco': linha_selecionada['Banco'],
+        'agencia': linha_selecionada['Agência/Conta'],
+        'data': linha_selecionada['Data'],
+        'historico': linha_selecionada['Desc. do Hist.'],
+        'tipo': linha_selecionada['Tipo'],
+        'valor': transformar_valor_decimal_str_em_float(linha_selecionada['Valor']),
+        'empresa': linha_selecionada['Empresa']
+    }
+
+    try:
+        with engine.begin() as conn:
+
+            # salvando registros de divisão
+            lista_ids_novos = salvar_divisao(query_final, parametro, conn)
+
+            lista_ids = []
+            lista_ids.append(linha_selecionada['id'])
+            for id in lista_ids_novos:
+                lista_ids.append(id)
+
+            # registrando liquidação
+            query_liquidacao = text(INSERIR_LIQUIDACAO_DIVISAO)
+            parametro_liquidacao = {
+                'id_extrato_1': linha_selecionada['id'],
+                'id_extrato_2': lista_ids_novos[0],
+                'valor_1': transformar_valor_decimal_str_em_float(linha_selecionada['Valor']),
+                'valor_2': transformar_valor_decimal_str_em_float(linha_selecionada['Valor']),
+                'data': linha_selecionada['Data'],
+                'lista_ids': list(lista_ids)
+            }
+            salvar_liquidacao_divisao(query_liquidacao, parametro_liquidacao, conn)
+
+            # refresh de views
+            query_refresh = text(REFRESH_VIEWS)
+            executar_refresh_view(query_refresh)
+
+        return lista_ids_novos
+    
+    except Exception as e:
+        raise ValueError(f'Erro ao processar dados. ({e})')
 
