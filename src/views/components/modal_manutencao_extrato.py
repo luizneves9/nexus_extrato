@@ -4,6 +4,8 @@ from database.connection import conectar_banco
 from services.extrato_services import manutencao_extrato, validar_e_criar_item_divisao, registrar_divisao
 from repositories.extratos_repositories import transformar_valor_decimal_em_str, transformar_valor_decimal_str_em_float
 
+engine = conectar_banco()
+
 @st.dialog('Manutenção de Registro', dismissible=False)
 def modal_manutencao(linha_selecionada):
 
@@ -93,6 +95,15 @@ def modal_manutencao(linha_selecionada):
                     sucesso = registrar_divisao(valor_original, soma_tabela, linha_selecionada, st.session_state.temp_divisao)
 
                 # encerramento
+                with engine.begin() as conn:    
+                    query = text('''
+                        BEGIN;
+                            REFRESH MATERIALIZED VIEW mv_fluxo_aplicacao_diario;
+                            REFRESH MATERIALIZED VIEW mv_fluxo_caixa_diario;
+                            COMMIT;
+                    ''')
+                    conn.execute(query)  
+
                 st.session_state['mensagem_sucesso'] = f'{msg}'
                 st.session_state.temp_divisao = []
                 st.rerun()
