@@ -52,10 +52,8 @@ SELECT_LIQUIDACOES_ID = '''
 QUERY_DELETE_EXTRATO = 'DELETE FROM public.db_extratos WHERE id = :id_linha'
 
 REFRESH_VIEWS = '''
-    BEGIN;
     REFRESH MATERIALIZED VIEW mv_fluxo_aplicacao_diario;
     REFRESH MATERIALIZED VIEW mv_fluxo_caixa_diario;
-    COMMIT;
 '''
 
 INSERIR_REGISTRO = '''

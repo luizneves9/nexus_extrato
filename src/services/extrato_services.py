@@ -211,7 +211,7 @@ def manutencao_extrato(id, tipo_selecionado):
 
     # atualizando resumos bancários
     refresh_views()
-
+    
     return 'Registro atualizado com sucesso!'
 
 def listar_contas_bancarias():
@@ -307,11 +307,7 @@ def registrar_divisao(valor_original, soma_tabela, linha_selecionada, tabela_div
             salvar_liquidacao_divisao(query_liquidacao, parametro_liquidacao, conn)
 
             # atualizando registro anterior
-            manutencao_extrato(linha_selecionada['id'], 'SUBSTITUIDO')
-
-            # refresh de views
-            query_refresh = text(REFRESH_VIEWS)
-            refresh_views()
+            manutencao_extrato(linha_selecionada['id'], 'SUBSTITUIDO') 
 
         return lista_ids_novos
     
