@@ -210,8 +210,8 @@ def manutencao_extrato(id, tipo_selecionado):
         raise ValueError('Erro ao salvar registro.')
 
     # atualizando resumos bancários
-    query = text(REFRESH_VIEWS)
-    executar_refresh_view(query)
+    refresh_views()
+    
     return 'Registro atualizado com sucesso!'
 
 def listar_contas_bancarias():
