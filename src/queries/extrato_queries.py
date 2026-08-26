@@ -86,9 +86,9 @@ CONTAS_BANCARIAS = '''
 '''
 
 INSERIR_DIVISAO = '''
-    INSERT INTO public.db_extratos (banco, agencia_conta, data_contabil, descricao_historico, complemento, tipo, valor, nome_empresa)
+    INSERT INTO public.db_extratos (banco, agencia_conta, data_contabil, descricao_historico, tipo, valor, nome_empresa)
     VALUES
-        (:banco, :agencia, :data, :historico, 'SUBSTITUICAO MANUAL', :tipo, -(:valor), :empresa)
+        (:banco, :agencia, :data, :historico, 'SUBSTITUIDO', -(:valor), :empresa)
 '''
 
 INSERIR_LIQUIDACAO_DIVISAO = '''

@@ -8,7 +8,7 @@ from repositories.extratos_repositories import transformar_valor_decimal_em_str,
 def modal_manutencao(linha_selecionada):
 
     # inicializando variáveis
-    lista_tipos = ['CREDITO', 'DEBITO', 'ECONTAS', 'TRANSFERENCIA', 'RESGATE', 'APLICACAO', 'RENDIMENTO']
+    lista_tipos = ['CREDITO', 'DEBITO', 'ECONTAS', 'TRANSFERENCIA', 'RESGATE', 'APLICACAO', 'RENDIMENTO', 'SUBSTITUIDO']
 
     if 'temp_divisao' not in st.session_state:
             st.session_state.temp_divisao = []
@@ -35,7 +35,7 @@ def modal_manutencao(linha_selecionada):
 
         c03.text_input('**Banco**', value=linha_selecionada['Banco'], disabled=True)
         c04.text_input('**Agência/Cc**', value=linha_selecionada['Agência/Conta'], disabled=True)
-        c05.text_input('**Tipo**', value=linha_selecionada['Tipo'], disabled=True)
+        with c05: selecao_tipo = st.selectbox('**Tipo**', options=lista_tipos, index=indice)
 
         c06.text_input('**Data**', value=linha_selecionada['Data'], disabled=True)
         c07.text_input('**Histórico**', value=linha_selecionada['Desc. do Hist.'], disabled=True)
@@ -47,15 +47,15 @@ def modal_manutencao(linha_selecionada):
         c001, c002, c003 = st.columns([1.5, 2, 0.5], vertical_alignment='bottom')
 
         with c001:
-            selecao_tipo = st.selectbox('**Tipo**', options=lista_tipos, index=indice)
+            tipo_input = st.selectbox('**Tipo:**', options=lista_tipos, index=indice)
 
         with c002:
-            val_input = st.number_input('**Divisão de Valor**', step=0.01)
+            val_input = st.number_input('**Valor:**', step=0.01)
 
         with c003:
             if st.button('+', key='add_btn_div'):
                 try:
-                    registro = validar_e_criar_item_divisao(val_input)
+                    registro = validar_e_criar_item_divisao(tipo_input, val_input, linha_selecionada)
                     st.session_state.temp_divisao.append(registro)
                 except Exception as e:
                     st.toast(e, icon='⚠️')
@@ -63,18 +63,16 @@ def modal_manutencao(linha_selecionada):
         if st.session_state.temp_divisao:
             with st.container(border=True):
 
-                c0001, c0002, c0003, c0004 = st.columns([1, 2, 1, 0.5], vertical_alignment='bottom')
-                c0001.write('**Data**')
-                c0002.write('**Histórico**')
-                c0003.write('**Valor**')
-                c0004.write('')
+                c0001, c0002, c0003 = st.columns([2.5, 2, 0.5], vertical_alignment='bottom')
+                c0001.write('**Tipo**')
+                c0002.write('**Valor**')
+                c0003.write('')
     
                 for item in st.session_state.temp_divisao:
-                    c1, c2, c3, c4 = st.columns([1, 2, 1, 0.5], vertical_alignment='bottom')
-                    c1.write(f'{linha_selecionada['Data']}')
-                    c2.write(f'{linha_selecionada['Desc. do Hist.'][:17:]}')
-                    c3.write(transformar_valor_decimal_em_str(item['Valor']))
-                    c4.button('-', key=f'btn_del_{item["_id"]}', on_click=excluir_registro, args=(item['_id'],))
+                    c1, c2, c3 = st.columns([2.5, 2, 0.5], vertical_alignment='bottom')
+                    c1.write(f'{item['Tipo']}')
+                    c2.write(transformar_valor_decimal_em_str(item['Valor']))
+                    c3.button('-', key=f'btn_del_{item["_id"]}', on_click=excluir_registro, args=(item['_id'],))
     
     col_confirmar, col_cancelar = st.columns([1, 1])
 
@@ -82,17 +80,17 @@ def modal_manutencao(linha_selecionada):
         if st.button('Confirmar', width='stretch', type='primary'):
             try:
 
-                # divisao
-                if 'temp_divisao' in st.session_state and st.session_state.temp_divisao:
-                    valor_original = transformar_valor_decimal_str_em_float(linha_selecionada['Valor'])
-                    soma_tabela = round(sum(round(item['Valor'], 2) for item in st.session_state.temp_divisao), 2)
-                    sucesso = registrar_divisao(valor_original, soma_tabela, linha_selecionada, st.session_state.temp_divisao)
-
                 # manutenção de tipo do registro
                 msg = manutencao_extrato(
                     id=linha_selecionada['id'],
                     tipo_selecionado=selecao_tipo
                 )
+
+                # divisao
+                if 'temp_divisao' in st.session_state and st.session_state.temp_divisao:
+                    valor_original = transformar_valor_decimal_str_em_float(linha_selecionada['Valor'])
+                    soma_tabela = round(sum(round(item['Valor'], 2) for item in st.session_state.temp_divisao), 2)
+                    sucesso = registrar_divisao(valor_original, soma_tabela, linha_selecionada, st.session_state.temp_divisao)
 
                 # encerramento
                 st.session_state['mensagem_sucesso'] = f'{msg}'

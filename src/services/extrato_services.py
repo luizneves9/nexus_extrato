@@ -228,18 +228,25 @@ def listar_contas_bancarias():
     except:
         raise ValueError('Erro ao processar dados.')
 
-def validar_e_criar_item_divisao(valor_divisao):
+def validar_e_criar_item_divisao(tipo_divisao, valor_divisao, linha_selecionada):
     """
     Aplica as regras de negócio para validar se um item pode ser adicionado.
     Lança ValueError se os dados forem inválidos.
     """
 
     # validação
+    if transformar_valor_decimal_str_em_float(linha_selecionada['Valor liq.']) != 0:
+        raise ValueError('O registro possui valor liquidado.')
+
+    if linha_selecionada['Tipo'] == 'SUBSTITUIDO':
+        raise ValueError('O registro já foi substituido.')
+
     if valor_divisao <= 0:
         raise ValueError('O valor informado deve ser maior que zero.')
 
     return {
         '_id': str(uuid.uuid4()),
+        'Tipo': tipo_divisao,
         'Valor': valor_divisao
     }
 
@@ -259,7 +266,7 @@ def registrar_divisao(valor_original, soma_tabela, linha_selecionada, tabela_div
     query = INSERIR_DIVISAO
 
     for c in tabela_divisao:
-        query += f" ,(:banco, :agencia, :data, :historico, 'SUBSTITUICAO MANUAL', :tipo, {-c['Valor'] if transformar_valor_decimal_str_em_float(linha_selecionada['Valor']) < 0 else c['Valor']}, :empresa)"
+        query += f" ,(:banco, :agencia, :data, :historico, '{c['Tipo']}', {-c['Valor'] if transformar_valor_decimal_str_em_float(linha_selecionada['Valor']) < 0 else c['Valor']}, :empresa)"
 
     # incluindo return
     query += ' RETURNING id'
@@ -272,7 +279,6 @@ def registrar_divisao(valor_original, soma_tabela, linha_selecionada, tabela_div
         'agencia': linha_selecionada['Agência/Conta'],
         'data': linha_selecionada['Data'],
         'historico': linha_selecionada['Desc. do Hist.'],
-        'tipo': linha_selecionada['Tipo'],
         'valor': transformar_valor_decimal_str_em_float(linha_selecionada['Valor']),
         'empresa': linha_selecionada['Empresa']
     }
@@ -299,6 +305,9 @@ def registrar_divisao(valor_original, soma_tabela, linha_selecionada, tabela_div
                 'lista_ids': list(lista_ids)
             }
             salvar_liquidacao_divisao(query_liquidacao, parametro_liquidacao, conn)
+
+            # atualizando registro anterior
+            manutencao_extrato(linha_selecionada['id'], 'SUBSTITUIDO')
 
             # refresh de views
             query_refresh = text(REFRESH_VIEWS)
